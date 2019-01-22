@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Index Page</title>
+    </head>
+    <body>
+        <h2>Hello {{ request.user.email }}</h2>
+        <p><a href="/accounts/settings/">Settings</a></p>
+        <p><a href="/accounts/logout/">Logout</a></p>
+    </body>
+</html>

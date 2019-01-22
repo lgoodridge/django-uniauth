@@ -1,0 +1,5 @@
+{% autoescape off %}
+Please click on the below link to verify this email address:
+
+{{ protocol }}://{{ domain }}{% url 'uniauth:verify-token' pk_base64=pk token=token %}{{ query_params }}
+{% endautoescape %}

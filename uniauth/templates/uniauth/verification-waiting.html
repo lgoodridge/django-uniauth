@@ -1,0 +1,44 @@
+{% extends 'uniauth/base.html' %}
+
+<!-- Page-specific headers -->
+{% block head %}
+
+<title>Uniauth | Waiting</title>
+
+<style>
+</style>
+
+{% endblock %}
+
+<!-- Page Content -->
+{% block content %}
+
+<div id="verify-waiting-form-spacer" class="spacer"></div>
+
+<div id="verify-waiting-form-wrapper" class="uniauth-wrapper wrapper wrapper-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox float-e-margins shadow-lg">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <span class="simple-title">Verification email sent!</span>
+                            <br/><br/>
+                            <span class="simple-followup">
+                                We have sent an email to <a href="mailto:{{ email }}">{{ email }}</a>.
+                                <br/><br/>
+                                Please click the link in the email to {% if is_signup %}complete registration{% else %}verify that email address{% endif %}.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+<!-- Page specific JS -->
+{% block script %}
+{% endblock %}

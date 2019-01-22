@@ -4,6 +4,19 @@ Example app Django settings.
 
 import os
 
+# Settings used by Uniauth
+LOGIN_URL = '/accounts/login/'
+PASSWORD_RESET_TIMEOUT_DAYS = 3
+UNIAUTH_FROM_EMAIL = 'uniauth@demoapp.com'
+UNIAUTH_LOGIN_REDIRECT_URL = '/'
+UNIAUTH_LOGOUT_REDIRECT_URL = None
+UNIAUTH_LOGOUT_CAS_COMPLETELY = True
+
+# Uniauth requires an actual email configuration to be set
+# up (to send emails for email validation,changing passwords,
+# etc.). This backend just prints emails to the screen.
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 # Definitely change these for real applications
 DEBUG = True
 SECRET_KEY = 'FAKE_SECRET'
@@ -31,12 +44,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Use the Uniauth authentication backends
+AUTHENTICATION_BACKENDS = [
+    'uniauth.backends.UsernameOrLinkedEmailBackend',
+    'uniauth.backends.CASBackend',
+]
+
 ROOT_URLCONF = 'demo-app.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'demo-app', 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

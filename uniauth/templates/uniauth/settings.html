@@ -1,0 +1,233 @@
+{% extends 'uniauth/base.html' %}
+
+<!-- Page-specific headers -->
+{% block head %}
+
+<title>Uniauth | Settings</title>
+
+<style>
+</style>
+
+{% endblock %}
+
+<!-- Page Content -->
+{% block content %}
+
+<div id="settings-form-spacer" class="spacer"></div>
+
+<div id="settings-form-wrapper" class="uniauth-wrapper wrapper wrapper-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox float-e-margins shadow-lg">
+                <div class="ibox-content">
+
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <span id="settings-title" class="simple-title centered-title">Account Settings</span>
+                        </div>
+                    </div>
+
+                    {% if email_resent or email_added or password_changed %}
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="form-group success-wrapper">
+                                    <span id="success-text" class="help-block">
+                                        {% if email_resent %}
+                                            Verification email resent to {{ email_resent }}.
+                                        {% elif email_added %}
+                                            Email successfully added. We've sent a verification email to {{ email_added }}.
+                                        {% elif password_changed %}
+                                            Password successfully updated.
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                    {% endif %}
+
+                    <div class="hr-line-dashed"></div>
+
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <span id="settings-email-header" class="settings-header">Emails</span>
+
+                            <!-- Action Email Form Table -->
+                            <form method="POST" class="post-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="action-email-submitted" value="True" />
+                                <div class="form-group">
+                                    <ul id="settings-emails-list" class="list-group">
+                                        <li id="primary-email-item" class="settings-email-item list-group-item">
+                                            <span class="settings-email-address settings-item-text">{{ request.user.email }}</span>
+                                            <span class="badge badge-success">Primary</span>
+                                        </li>
+                                        {% for email in request.user.profile.linked_emails.all %}
+                                            {% if email.address != request.user.email %}
+                                                <li class="settings-email-item list-group-item">
+                                                    <span class="settings-email-address settings-item-text">{{ email.address }}</span>
+                                                    {% if not email.is_verified %}
+                                                        <span class="badge badge-warning">Pending</span>
+                                                    {% endif %}
+                                                    <span class="settings-email-buttons">
+                                                        {% if not email.is_verified %}
+                                                            <button type="submit" name="resend_pk" value="{{ email.pk }}" title="Resend verification email" class="icon-btn settings-email-resend-btn"><i class="fa fa-envelope-o"></i></button>
+                                                        {% endif %}
+                                                        <button type="submit" name="delete_pk" value="{{ email.pk }}" title="Remove this email address" class="icon-btn settings-email-delete-btn"><i class="fa fa-trash-o"></i></button>
+                                                    </span>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </form>
+
+                            <!-- Add Email Form -->
+                            <form method="POST" class="post-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="add-email-submitted" value="True" />
+
+                                {% if add_email_form.errors %}
+                                    <div class="form-group has-error">
+                                        <span id="error-text" class="form-error help-block">
+                                            {% for key, value in add_email_form.errors.items %}
+                                                {% if forloop.counter == 1 %}
+                                                    {{ value.as_text|slice:"2:" }}
+                                                {% endif %}
+                                            {% endfor %}
+                                        </span>
+                                    </div>
+                                {% endif %}
+
+                                <div class="form-group">
+                                    <label for="add-email">Add email address:</label>
+                                    <input id="add-email" name="email" type="email" class="form-control input-block" value="{{ add_email_form.email.value|default_if_none:"" }}" autocapitalize="off" autocorrect="off" required />
+                                    <button type="submit" class="save btn btn-action">Add</button>
+                                </div>
+                            </form>
+
+                            <!-- Change Email Form -->
+                            <form method="POST" class="post-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="change-email-submitted" value="True" />
+
+                                {% if change_email_form.errors %}
+                                    <div class="form-group has-error">
+                                        <span id="error-text" class="form-error help-block">
+                                            {% for key, value in change_email_form.errors.items %}
+                                                {% if forloop.counter == 1 %}
+                                                    {{ value.as_text|slice:"2:" }}
+                                                {% endif %}
+                                            {% endfor %}
+                                        </span>
+                                    </div>
+                                {% endif %}
+
+                                <div class="form-group no-margin-bottom">
+                                    <label for="change-email">Primary email address:</label>
+                                    <select id="change-email" name="email" class="form-control input-block">
+                                        <option value="{{ request.user.email }}">{{ request.user.email }}</option>
+                                        {% for value, display in change_email_form.email.field.choices %}
+                                            {% if value != request.user.email %}
+                                                <option value="{{ value }}">{{ display }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="save btn btn-action">Save</button>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+
+                    <div class="hr-line-dashed"></div>
+
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <span id="settings-account-header" class="settings-header">Linked Accounts</span>
+                            <div class="form-group no-margin-bottom">
+                                <ul id="settings-accounts-list" class="list-group">
+                                    {% for account in request.user.profile.accounts.all %}
+                                        <li class="settings-account-item list-group-item">
+                                            <span class="settings-item-text">
+                                                <b>{{ account.institution.name }}</b>
+                                                ({{ account.cas_id }})
+                                            </span>
+                                            <span class="badge badge-info">CAS</span>
+                                        </li>
+                                    {% endfor %}
+                                    <li class="settings-account-item list-group-item">
+                                        <span>
+                                            <label id="settings-cas-select-label" for="settings-cas-select">Add CAS Account:</label>
+                                            <select id="settings-cas-select" class="form-control input-block" onchange="location = this.value;">
+                                                <option>(Select Server)</option>
+                                                {% for institution in institutions %}
+                                                    <option value="{{ institution.3 }}{{ query_params }}">{{ institution.0 }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hr-line-dashed"></div>
+
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <span id="settings-password-header" class="settings-header">Change Password</span>
+
+                            <!-- Change Password Form -->
+                            <form method="POST" class="post-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="change-password-submitted" value="True" />
+
+                                {% if change_password_form.errors %}
+                                    <div class="form-group has-error">
+                                        <span id="error-text" class="form-error help-block">
+                                            {% for key, value in change_password_form.errors.items %}
+                                                {% if forloop.counter == 1 %}
+                                                    {{ value.as_text|slice:"2:" }}
+                                                {% endif %}
+                                            {% endfor %}
+                                        </span>
+                                    </div>
+                                {% endif %}
+
+                                <div class="form-group">
+                                    <div class="form-group settings-password-row">
+                                        <label for="id_old_password">Old Password:</label>
+                                        <input id="id_old_password" name="old_password" type="password" class="form-control input-block" value="" required />
+                                    </div>
+
+                                    <div class="form-group settings-password-row">
+                                        <label for="id_new_password1">New Password:</label>
+                                        <input id="id_new_password1" name="new_password1" type="password" class="form-control input-block" value="" required />
+                                        <span>Make sure it's at least 8 characters. Numbers and special characters recommended.</span>
+                                    </div>
+
+                                    <div class="form-group settings-password-row">
+                                        <label for="new_id_password2">Confirm Password:</label>
+                                        <input id="new_id_password2" name="new_password2" type="password" class="form-control input-block" value="" required />
+                                        <span>Enter the same password again, to confirm it.</span>
+                                    </div>
+
+                                    <button type="submit" class="save btn btn-action">Update password</button>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+<!-- Page specific JS -->
+{% block script %}
+{% endblock %}

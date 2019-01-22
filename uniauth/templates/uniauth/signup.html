@@ -1,0 +1,96 @@
+{% extends 'uniauth/base.html' %}
+
+<!-- Page-specific headers -->
+{% block head %}
+
+<title>Uniauth | Sign Up</title>
+
+<style>
+</style>
+
+{% endblock %}
+
+<!-- Page Content -->
+{% block content %}
+
+<div id="signup-form-spacer" class="spacer"></div>
+
+<div id="signup-form-wrapper" class="uniauth-wrapper wrapper wrapper-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox float-e-margins shadow-lg">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <form method="POST" class="post-form">
+                                {% csrf_token %}
+
+                                {% if form.errors %}
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <div class="form-group has-error">
+                                            <span id="error-text" class="form-error help-block">
+                                                {% for key, value in form.errors.items %}
+                                                    {% if forloop.counter == 1 %}
+                                                        {{ value.as_text|slice:"2:" }}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <div class="form-group">
+                                            <span id="signup-title" class="simple-title centered-title">Create an Account</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <div class="form-group signup-row">
+                                            <label for="id_email">Email Address:</label>
+                                            <input id="id_email" name="email" type="email" class="form-control input-block" value="{{ form.email.value|default_if_none:"" }}" autocapitalize="off" autocorrect="off" required />
+                                            <span>Will primarily be used for verification and password recovery.</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <div class="form-group signup-row">
+                                            <label for="id_password1">Password:</label>
+                                            <input id="id_password1" name="password1" type="password" class="form-control input-block" value="" required />
+                                            <span>Make sure it's at least 8 characters. Numbers and special characters recommended.</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <div class="form-group signup-row">
+                                            <label for="id_password2">Confirm Password:</label>
+                                            <input id="id_password2" name="password2" type="password" class="form-control input-block" value="" required />
+                                            <span>Enter the same password again, to confirm it.</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button id="submit-btn" type="submit" class="save btn btn-action">Sign Up!</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+<!-- Page specific JS -->
+{% block script %}
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'uniauth/base.html' %}
+
+<!-- Page-specific headers -->
+{% block head %}
+
+<title>Uniauth | Failure</title>
+
+<style>
+</style>
+
+{% endblock %}
+
+<!-- Page Content -->
+{% block content %}
+
+<div id="verify-failure-form-spacer" class="spacer"></div>
+
+<div id="verify-failure-form-wrapper" class="uniauth-wrapper wrapper wrapper-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox float-e-margins shadow-lg">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <span class="simple-title">Verification link is invalid</span>
+                            <br/><br/>
+                            <span class="simple-followup">Check that the link was copied correctly, and was sent recently. Links will expire within a few days of being sent.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+<!-- Page specific JS -->
+{% block script %}
+{% endblock %}

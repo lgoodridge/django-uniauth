@@ -1,0 +1,44 @@
+{% extends 'uniauth/base.html' %}
+
+<!-- Page-specific headers -->
+{% block head %}
+
+<title>Uniauth | Success</title>
+
+<style>
+</style>
+
+{% endblock %}
+
+<!-- Page Content -->
+{% block content %}
+
+<div id="link-success-form-spacer" class="spacer"></div>
+
+<div id="link-success-form-wrapper" class="uniauth-wrapper wrapper wrapper-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="ibox float-e-margins shadow-lg">
+                <div class="ibox-content">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <span class="simple-title">Account Link Successful</span>
+                            <br/><br/>
+                            <span class="simple-followup">
+                                Your {{ institution.name }} CAS credentials has been successfully linked to your Uniauth account.
+                                <br/><br/>
+                                <a href="{{ next_url }}">Click here</a> to continue.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+<!-- Page specific JS -->
+{% block script %}
+{% endblock %}
