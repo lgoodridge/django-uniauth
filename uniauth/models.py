@@ -28,11 +28,15 @@ class UserProfile(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     """
     Create a Uniauth profile automatically when a User is created.
+
+    If the User was given an email on creation, add it as a verified
+    LinkedEmail immediately.
     """
     if created:
         profile = UserProfile.objects.create(user=instance)
         if profile and instance.email:
-            LinkedEmail.objects.create(profile=profile, address=instance.email)
+            LinkedEmail.objects.create(profile=profile,
+                    address=instance.email, is_verified=True)
 
 
 @receiver(post_save, sender=get_user_model())

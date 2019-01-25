@@ -46,7 +46,7 @@ MIDDLEWARE = [
 
 # Use the Uniauth authentication backends
 AUTHENTICATION_BACKENDS = [
-    'uniauth.backends.UsernameOrLinkedEmailBackend',
+    'uniauth.backends.LinkedEmailBackend',
     'uniauth.backends.CASBackend',
 ]
 
