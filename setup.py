@@ -5,7 +5,7 @@ with open("README.md", "r") as readme:
 
 setuptools.setup(
     name="django-uniauth",
-    version="0.0.1",
+    version="0.0.2",
     author="Lance Goodridge",
     author_email="ldgoodridge95@gmail.com",
     keywords=["django", "auth", "authentication", "cas", "sso", "single sign-on"],
@@ -30,5 +30,8 @@ setuptools.setup(
         "Natural Language :: English",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
     ]
 )
