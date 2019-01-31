@@ -94,21 +94,21 @@ input.form-control::placeholder {
     margin-top: 5px
 }
 
-#link-to-account-form-spacer {
-    height: calc(40% - 162px);
-}
-
-#link-to-account-form-wrapper form {
-    padding-top: 10px;
-}
-
-#link-to-account-title {
-    padding-bottom: 10px;
-}
-
 #link-success-form-wrapper {
     left: calc(50% - 160px);
     width: 320px;
+}
+
+#link-to-profile-form-spacer {
+    height: calc(40% - 162px);
+}
+
+#link-to-profile-form-wrapper form {
+    padding-top: 10px;
+}
+
+#link-to-profile-title {
+    padding-bottom: 10px;
 }
 
 #login-form-spacer {

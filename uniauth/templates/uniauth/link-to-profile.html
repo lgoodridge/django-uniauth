@@ -13,9 +13,9 @@
 <!-- Page Content -->
 {% block content %}
 
-<div id="link-to-account-form-spacer" class="spacer"></div>
+<div id="link-to-profile-form-spacer" class="spacer"></div>
 
-<div id="link-to-account-form-wrapper" class="uniauth-wrapper wrapper wrapper-content">
+<div id="link-to-profile-form-wrapper" class="uniauth-wrapper wrapper wrapper-content">
     <div class="row">
         <div class="col-lg-12">
             <div class="ibox float-e-margins shadow-lg">
@@ -24,8 +24,8 @@
                     <div class="row">
                         <div class="col-lg-12">
                             <div>
-                                <span id="link-to-account-title" class="simple-title centered-title">Link CAS Account</span>
-                                <span id="link-to-account-intro" class="simple-followup">This Princeton CAS ID is not associated with any registered Uniauth account.</span>
+                                <span id="link-to-profile-title" class="simple-title centered-title">Link CAS Account</span>
+                                <span id="link-to-profile-intro" class="simple-followup">This Princeton CAS ID is not associated with any registered Uniauth account.</span>
                             </div>
                         </div>
                     </div>
@@ -34,7 +34,7 @@
 
                     <div class="row">
                         <div class="col-lg-12">
-                            <span id="link-to-account-login-label" class="simple-followup">If you already have a Uniauth account, please login here:</span>
+                            <span id="link-to-profile-login-label" class="simple-followup">If you already have a Uniauth account, please login here:</span>
                             <form method="POST" class="post-form">
                                 {% csrf_token %}
 
@@ -71,7 +71,7 @@
 
                     <div class="row">
                         <div class="col-lg-12">
-                            <span id="link-to-account-signup-label">Otherwise, <a href="{% url 'uniauth:signup' %}{{ query_params }}">CLICK HERE</a> to create one.
+                            <span id="link-to-profile-signup-label">Otherwise, <a href="{% url 'uniauth:signup' %}{{ query_params }}">CLICK HERE</a> to create one.
                         </div>
                     </div>
 
