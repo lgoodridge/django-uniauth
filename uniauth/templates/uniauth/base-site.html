@@ -1,5 +1,11 @@
 {% extends "uniauth/base.html" %}
 
+{% load static from staticfiles %}
+
+{% block shared-head %}
+<link rel="shortcut icon" href="{% static 'uniauth/img/favicon.ico' %}"/>
+{% endblock %}
+
 {% block body %}
 <div id="wrapper">
     <div id="page-wrapper" class="lavender-bg">

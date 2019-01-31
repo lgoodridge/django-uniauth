@@ -16,6 +16,10 @@
         <link href="{% static 'uniauth/css/theme.css' %}" rel="stylesheet" type="text/css"/>
         <link href="{% static 'uniauth/css/style.css' %}" rel="stylesheet" type="text/css"/>
 
+        <!-- Shared headers -->
+        {% block shared-head %}
+        {% endblock %}
+
         <!-- Page specific headers -->
         {% block head %}
         {% endblock %}
