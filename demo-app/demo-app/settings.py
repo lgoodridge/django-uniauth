@@ -7,6 +7,7 @@ import os
 # Settings used by Uniauth
 LOGIN_URL = '/accounts/login/'
 PASSWORD_RESET_TIMEOUT_DAYS = 3
+UNIAUTH_ALLOW_STANDALONE_ACCOUNTS = True
 UNIAUTH_FROM_EMAIL = 'uniauth@demoapp.com'
 UNIAUTH_LOGIN_REDIRECT_URL = '/'
 UNIAUTH_LOGOUT_REDIRECT_URL = None

@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.contrib.auth import get_user_model, REDIRECT_FIELD_NAME
 from django.shortcuts import resolve_url
 from django.utils import timezone
 from django.utils.crypto import get_random_string
@@ -10,11 +10,28 @@ from django.utils.six.moves import urllib_parse
 DEFAULT_SETTING_VALUES = {
     'LOGIN_URL': '/accounts/login/',
     'PASSWORD_RESET_TIMEOUT_DAYS': 3,
+    'UNIAUTH_ALLOW_STANDALONE_ACCOUNTS': True,
     'UNIAUTH_FROM_EMAIL': 'uniauth@example.com',
     'UNIAUTH_LOGIN_REDIRECT_URL': '/',
     'UNIAUTH_LOGOUT_REDIRECT_URL': None,
     'UNIAUTH_LOGOUT_CAS_COMPLETELY': False,
 }
+
+
+def choose_username(email):
+    """
+    Chooses a unique username for the provided user.
+
+    Sets the username to the email parameter umodified if
+    possible, otherwise adds a numerical suffix to the email.
+    """
+    def get_suffix(number):
+        return "" if number == 1 else "_"+str(number).zfill(3)
+    user_model = get_user_model()
+    num = 1
+    while user_model.objects.filter(username=email+get_suffix(num)).exists():
+        num += 1
+    return email + get_suffix(num)
 
 
 def get_protocol(request):
@@ -91,7 +108,23 @@ def get_setting(setting_name):
 
 def is_tmp_user(user):
     """
-    Returns whether the provided user is a temporary
-    one (exists, but has no verified profile yet)
+    Returns whether the provided user is a temporary one:
+
+    By default, this includes users midway through verifying
+    their profile (have usernames starting with "tmp").
+
+    If the UNIAUTH_ALLOW_STANDALONE_ACCOUNTS setting is
+    False, it includes Institution Account logins (such as
+    CAS) that have not been linked to a Uniauth profile yet.
     """
-    return user.username and user.username.startswith('tmp-')
+    return user.username and (user.username.startswith('tmp-') or \
+            (not get_setting('UNIAUTH_ALLOW_STANDALONE_ACCOUNTS') and \
+                    is_unlinked_account(user)))
+
+
+def is_unlinked_account(user):
+    """
+    Returns whether the provided user has authenticated via
+    an InstitutionAccount not yet linked to a Uniauth profile.
+    """
+    return user.username and user.username.startswith('cas-')

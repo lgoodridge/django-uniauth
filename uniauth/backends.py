@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 from django.db.models import Q
 from uniauth.models import InstitutionAccount, UserProfile
+from uniauth.utils import is_tmp_user
 
 
 class CASBackend(ModelBackend):
@@ -38,10 +39,10 @@ class CASBackend(ModelBackend):
         except InstitutionAccount.DoesNotExist:
             user = None
 
-        # If such a user does not exist, get or create a one with
-        # a temporary username (to be later changed during signup)
+        # If such a user does not exist, get or create
+        # one with a deterministic, CAS username
         if not user:
-            temp_username = "tmp-%s-%s" % (institution.slug, username)
+            temp_username = "cas-%s-%s" % (institution.slug, username)
             user, created = user_model._default_manager.get_or_create(
                     **{user_model.USERNAME_FIELD: temp_username})
 
@@ -68,7 +69,7 @@ class LinkedEmailBackend(ModelBackend):
         return user_model._default_manager.filter(
                 profile__linked_emails__address__iexact=email,
                 profile__linked_emails__is_verified=True
-        )
+        ).all()
 
     def authenticate(self, request, email=None, password=None, **kwargs):
         user_model = get_user_model()
@@ -114,10 +115,9 @@ class UsernameOrLinkedEmailBackend(LinkedEmailBackend):
         email address matching the provided username value
         """
         username_field = user_model.USERNAME_FIELD
-        return user_model._default_manager.filter(
-                (Q(**{username_field: username}) &
-                    ~Q(**{(username_field + '__startswith'): 'tmp-'})) |
+        matched_users =  user_model._default_manager.filter(
+                (Q(**{username_field: username})) |
                 (Q(profile__linked_emails__address__iexact=username) &
                     Q(profile__linked_emails__is_verified=True))
-        )
-
+        ).all()
+        return filter(lambda x: not is_tmp_user(x), matched_users)

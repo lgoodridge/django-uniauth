@@ -4,7 +4,7 @@
         <title>Index Page</title>
     </head>
     <body>
-        <h2>Hello {{ request.user.email }}</h2>
+        <h2>Hello {% if request.user.email %}{{ request.user.email }}{% else %}{{ request.user.username }}{% endif %}</h2>
         <p><a href="/accounts/settings/">Settings</a></p>
         <p><a href="/accounts/logout/">Logout</a></p>
     </body>

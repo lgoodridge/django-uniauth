@@ -1,7 +1,7 @@
 from cas import CASClient
 from django.contrib.auth import authenticate, login as auth_login, \
         logout as auth_logout, REDIRECT_FIELD_NAME
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.contrib.auth.views import PasswordResetCompleteView, \
         PasswordResetConfirmView, PasswordResetDoneView, PasswordResetView
 from django.contrib.sites.shortcuts import get_current_site
@@ -14,8 +14,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes, force_text
-from django.utils.http import urlsafe_base64_decode, \
-        urlsafe_base64_encode
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.six.moves import urllib_parse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
@@ -25,8 +24,9 @@ from uniauth.forms import AddLinkedEmailForm, ChangePrimaryEmailForm, \
         PasswordResetForm, SignupForm
 from uniauth.models import Institution, InstitutionAccount, LinkedEmail
 from uniauth.tokens import token_generator
-from uniauth.utils import get_protocol, get_random_username, \
-        get_redirect_url, get_service_url, get_setting, is_tmp_user
+from uniauth.utils import choose_username, get_protocol, get_random_username, \
+        get_redirect_url, get_service_url, get_setting, is_tmp_user, \
+        is_unlinked_account
 
 
 def _get_global_context(request):
@@ -40,7 +40,7 @@ def _get_global_context(request):
     institutions = Institution.objects.all()
     institutions = map(lambda x: (x.name, x.slug,
             reverse('uniauth:cas-login', args=[x.slug]),
-            reverse('uniauth:link-from-account', args=[x.slug])),
+            reverse('uniauth:link-from-profile', args=[x.slug])),
             institutions)
     context['institutions'] = institutions
 
@@ -60,7 +60,7 @@ def _login_success(user, next_url):
     """
     if is_tmp_user(user):
         params = urllib_parse.urlencode({'next': next_url})
-        return HttpResponseRedirect(reverse('uniauth:link-to-account') + \
+        return HttpResponseRedirect(reverse('uniauth:link-to-profile') + \
                 '?' + params)
     else:
         return HttpResponseRedirect(next_url)
@@ -247,8 +247,10 @@ def signup(request):
     if not next_url:
         next_url = get_redirect_url(request)
 
-    # If the user is already authenticated + verified, proceed to next page
-    if request.user.is_authenticated and not is_tmp_user(request.user):
+    # If the user is already authenticated + has a Uniauth
+    # profile, proceed to next page
+    if request.user.is_authenticated and not is_tmp_user(request.user) \
+            and not is_unlinked_account(request.user):
         return HttpResponseRedirect(next_url)
 
     # If it's a POST request, attempt to validate the form
@@ -293,8 +295,8 @@ def signup(request):
 def settings(request):
     """
     Allows the user to link additional emails, change
-    their primary email address, and link additional
-    institution accounts.
+    the primary email address of, and link additional
+    institution accounts to their Uniauth profile.
     """
     context = _get_global_context(request)
     context['email_resent'] = None
@@ -305,6 +307,14 @@ def settings(request):
     add_email_form = None
     change_email_form = None
     change_password_form = None
+
+    # This page may only be accessed by users with Uniauth profiles:
+    # if the user is logged in with an unlinked InsitutionAccount,
+    # redirect them to the link page
+    if is_unlinked_account(request.user):
+        params = urllib_parse.urlencode({'next': reverse('uniauth:settings')})
+        return HttpResponseRedirect(reverse('uniauth:link-to-profile') + \
+                '?' + params)
 
     # If it's a POST request, determine which form was submitted
     if request.method == 'POST':
@@ -371,6 +381,7 @@ def settings(request):
                     request.POST)
             if change_password_form.is_valid():
                 change_password_form.save()
+                update_session_auth_hash(request, request.user)
                 context['password_changed'] = True
                 change_password_form = None
 
@@ -392,15 +403,33 @@ def settings(request):
     return render(request, 'uniauth/settings.html', context)
 
 
-def link_to_account(request):
+def _add_institution_account(profile, slug, cas_id, deactivate=True):
+    """
+    Accepts an institution slug and cas ID and links an
+    InsitutionAccount to the provided Uniauth user.
+
+    Deactivates the corresponding unlinked account user
+    if deactivate is True.
+    """
+    institution = Institution.objects.get(slug=slug)
+    account = InstitutionAccount.objects.create(profile=profile,
+            institution=institution, cas_id=cas_id)
+    if deactivate:
+        username = "cas-%s-%s" % (slug, cas_id)
+        old_user = get_user_model().objects.get(username=username)
+        old_user.is_active = False
+        old_user.save()
+
+
+def link_to_profile(request):
     """
     If the user is a temporary one who was logged in via
-    an institution (not through a Uniauth account), offers
+    an institution (not through a Uniauth profile), offers
     them the choice between logging to an existing Uniauth
     account or creating a new one.
 
     The institution account is (eventually) linked to the
-    Uniauth account the user logged into / created.
+    Uniauth profile the user logged into / created.
     """
     next_url = request.GET.get('next')
     context = _get_global_context(request)
@@ -416,12 +445,12 @@ def link_to_account(request):
         return HttpResponseRedirect(reverse('uniauth:login') + '?' + params)
 
     # If the user is already authenticated + verified, proceed to next page
-    if not is_tmp_user(request.user):
+    if not is_tmp_user(request.user) and not is_unlinked_account(request.user):
         return HttpResponseRedirect(next_url)
 
     # If the user is temporary, but was not logged in via an institution
     # (e.g. created through Uniauth, but not verified), redirect to signup
-    if len(request.user.username.split('-')) < 3:
+    if not is_unlinked_account(request.user):
         return HttpResponseRedirect(reverse('uniauth:signup') + '?' + params)
 
     # At this point, we've ensured the user is temporary and was
@@ -440,31 +469,31 @@ def link_to_account(request):
             user = form.get_user()
             auth_login(request, user)
 
-            # Add the institution account described by the temporary username
-            institution = Institution.objects.get(slug=username_split[1])
-            account = InstitutionAccount.objects.create(
-                    profile=user.profile, institution=institution,
-                    cas_id=username_split[2])
+            # Add the institution account described by the username
+            # + deactivate the old, unlinked institution account
+            _add_institution_account(user.profile, username_split[1],
+                    username_split[2], True)
 
-            context['institution'] = institution
+            slug = username_split[1]
+            context['institution'] = Institution.objects.get(slug=slug)
             return render(request, 'uniauth/link-success.html', context)
 
         # Authentication failed: render form errors
         else:
             context['form'] = form
-            return render(request, 'uniauth/link-to-account.html', context)
+            return render(request, 'uniauth/link-to-profile.html', context)
 
     # Otherwise, render a blank Login form
     else:
         form = LoginForm(request)
         context['form'] = form
-        return render(request, 'uniauth/link-to-account.html', context)
+        return render(request, 'uniauth/link-to-profile.html', context)
 
 
-def link_from_account(request, institution):
+def link_from_profile(request, institution):
     """
     Attempts to authenticate a CAS account for the provided
-    institution, and links it to the current Uniauth account
+    institution, and links it to the current Uniauth profile
     if successful.
     """
     next_url = request.GET.get('next')
@@ -481,7 +510,8 @@ def link_from_account(request, institution):
 
     # If the user is not already logged into a verified
     # Uniauth account, raise permission denied
-    if not request.user.is_authenticated or is_tmp_user(request.user):
+    if not request.user.is_authenticated or is_tmp_user(request.user) \
+            or is_unlinked_account(request.user):
         raise PermissionDenied("Must be logged in as verified Uniauth user.")
 
     service_url = get_service_url(request, next_url)
@@ -493,18 +523,13 @@ def link_from_account(request, institution):
         user = authenticate(request=request, institution=institution,
                 ticket=ticket, service=service_url)
 
-        # Authentication successful: link to Uniauth profile + proceed
+        # Authentication successful: link to Uniauth profile if the
+        # institution account has not been linked yet + proceed
         if user:
-            username_split = user.username.split("-")
-
-            # Note that if the account is already linked to a profile
-            # it won't have a three length split, and it will be ignored
-            if len(username_split) == 3:
-                institution = Institution.objects.get(slug=username_split[1])
-                account = InstitutionAccount.objects.create(
-                        profile=request.user.profile, institution=institution,
-                        cas_id=username_split[2])
-                user.delete()
+            if is_unlinked_account(user):
+                username_split = user.username.split("-")
+                _add_institution_account(request.user.profile,
+                        username_split[1], username_split[2], True)
 
             return HttpResponseRedirect(next_url)
 
@@ -532,7 +557,8 @@ def verify_token(request, pk_base64, token):
     try:
         email_pk = force_text(urlsafe_base64_decode(pk_base64))
         email = LinkedEmail.objects.get(pk=email_pk)
-    except (TypeError, ValueError, OverflowError, user_model.DoesNotExist):
+    except (TypeError, ValueError, OverflowError, user_model.DoesNotExist,
+            LinkedEmail.DoesNotExist):
         email = None
 
     # In the unlikely scenario that a user is trying to sign up
@@ -550,22 +576,20 @@ def verify_token(request, pk_base64, token):
         # If the user this email is linked to is a temporary
         # one, change it to a fully registered user
         user = email.profile.user
-        if is_tmp_user(user):
+        if is_tmp_user(user) or is_unlinked_account(user):
             context['is_signup'] = True
             username_split = user.username.split("-")
 
             # Change the email + username to the verified email
             user.email = email.address
-            user.username = user.email
+            user.username = choose_username(user.email)
             user.save()
 
             # If the user was created via CAS, add the institution
             # account described by the temporary username
-            if len(username_split) == 3:
-                institution = Institution.objects.get(slug=username_split[1])
-                account = InstitutionAccount.objects.create(
-                        profile=user.profile, institution=institution,
-                        cas_id=username_split[2])
+            if username_split[0] == "cas":
+                _add_institution_account(user.profile, username_split[1],
+                        username_split[2], False)
 
         return render(request, 'uniauth/verification-success.html', context)
 
