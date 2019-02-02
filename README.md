@@ -62,6 +62,7 @@ Uniauth uses the following settings from the `django.contrib.auth` package:
 
 The following custom settings are also used:
 
+ - `UNIAUTH_ALLOW_STANDALONE_ACCOUNTS`: Whether to allow users to log in via an Institution Account (such as via CAS) without linking it to a Uniauth profile first. If set to `False`, users will be required to create or link a profile to their Institution Accounts before being able to access views protected by the `@login_required` decorator. Defaults to `True`.
  - `UNIAUTH_FROM_EMAIL`: Determines the "from" email address when UniAuth sends an email, such as for email verification or password resets. Defaults to `uniauth@example.com`.
  - `UNIAUTH_LOGIN_REDIRECT_URL`: Where to redirect the user after logging in, if no next URL is provided. Defaults to `/`.
  - `UNIAUTH_LOGOUT_REDIRECT_URL`: Where to redirect the user after logging out, if no next URL is provided. If this setting is `None`, and a next URL is not provided, the logout template is rendered instead. Defaults to `None`.
@@ -71,7 +72,7 @@ The following custom settings are also used:
 
 UniAuth supports any custom User model, so long as the model has `username` and `email` fields. The `email` serves as the primary identifying field within UniAuth, with the `username` being set to an arbitrary unique value to support packages that require it. Once a user's profile has been activated, other apps are free to change the `username` without disrupting UniAuth's behavior.
 
-When a user is first created (for example, by completing the Sign Up form, but before verifying the email address), they are given a username beginning with `tmp-`, followed by a unique suffix, and an empty `email` field. When the first email for a user has been verified, their profile is considered fully activated, the `email` field is set to the verified email, and the `username` field is arbitrarily set to that email address as well, unless it is taken.
+Users are created by either completing the Sign Up form, or logging in via an `InstitutionAccount`. In the former case, they are given a username beginning with `tmp-`, followed by a unique suffix, and an empty `email` field. When the first email for a user has been verified, their profile is considered fully activated, the `email` field is set to the verified email, and the `username` field is arbitrarily set to that email address as well, unless it is taken. In the latter case, they are given a username describing how they were authenticated, along with the institution they signed into and their ID for that institution. They will keep this username and have an empty `email` field until they link their account to a verified Uniauth profile.
 
 Users may have multiple email addresses linked to their profile, any of which may be used for authentication (if one of the `LinkedEmail` [UniAuth backends](https://github.com/lgoodridge/UniAuth#backends) are used), or for password reset. The address set in the user's `email` field is considered the "primary email", and is the only one that must be unique across all users. Users may change which linked email is their primary email address at any point via the `settings` page, so long as that primary email is not taken by another user.
 
@@ -115,6 +116,33 @@ The remaining views are used internally by UniAuth, and should not be linked to 
 
 UniAuth also implements its own version of the `@login_required` decorator, which ensure the user is logged in with an activated UniAuth profile before accessing the view. It may be used identically to the [built-in `@login_required` decorator](https://docs.djangoproject.com/en/2.1/topics/auth/default/#the-login-required-decorator), and should be added to your own views in place of the default version.
 
+## Template Customization
+
+The presentation of the views can be easily changed by overriding the appropriate template(s). For example, to add your own stylesheet to the UniAuth templates, create a `uniauth` folder in your `templates` directory, and add a `base-site.html` file to override the default one like so:
+
+    {% extends "uniauth/base.html" %}
+    
+    {% load static from staticfiles %}
+    
+    {% block shared-head %}
+    <link rel="shortcut icon" href="{% static 'uniauth/img/favicon.ico' %}"/>
+    <link href="{% static 'path/to/custom-style.css' %}" rel="stylesheet" type="text/css"/>
+    {% endblock %}
+    
+    {% block body %}
+    <div id="wrapper">
+        <div id="page-wrapper" class="lavender-bg">
+            <div id="content-wrapper">
+                <div id="top-background"></div>
+                {% block content %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+More specific changes can be made by overriding the appropriate template.
+
 ## URL Parameters
 
 All views except `/settings/` persist URL parameters to their final destination. This means you can add a query string to the `login` URL, and have it apply to the `UNIAUTH_LOGIN_REDIRECT_URL` page, for example.
@@ -127,14 +155,13 @@ This app should not be added to a project that already has registered users, bec
 
 The app also only supports a small number of institutions by default at the moment. Additional institutions may be added post-installation as needed.
 
-The source repository contains a `demo-app` directory which demonstrates how to setup a simple Django app to use UniAuth. This app has no functionality, and exists solely to show off the installable `uniauth` app.
+The source repository contains a `demo-app` directory which demonstrates how to setup a simple Django app to use UniAuth. This app has no functionality, and exists solely to show off the installable `uniauth` app. A quick-start guide for integrating UniAuth can be found [here](https://github.com/lgoodridge/UniAuth/tree/master/demo-app).
 
 [djangover-image]: https://img.shields.io/pypi/djversions/django-uniauth.svg?label=django
 [djangover-url]: https://pypi.python.org/pypi/django-uniauth/
 
 [license-image]: https://img.shields.io/github/license/lgoodridge/Uniauth.svg
-[license-url]:
-https://github.com/lgoodridge/UniAuth/blob/master/LICENSE.md
+[license-url]: https://github.com/lgoodridge/UniAuth/blob/master/LICENSE.md
 
 [pypi-image]: https://img.shields.io/pypi/v/django-uniauth.svg
 [pypi-url]: https://pypi.python.org/pypi/django-uniauth/
@@ -144,3 +171,4 @@ https://github.com/lgoodridge/UniAuth/blob/master/LICENSE.md
 
 [status-image]: https://img.shields.io/pypi/status/django-uniauth.svg
 [status-url]: https://pypi.python.org/pypi/django-uniauth/
+
