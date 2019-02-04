@@ -5,11 +5,12 @@ with open("README.md", "r") as readme:
 
 setuptools.setup(
     name="django-uniauth",
-    version="0.2.0",
+    version="0.2.1",
     author="Lance Goodridge",
     author_email="ldgoodridge95@gmail.com",
     keywords=["django", "auth", "authentication", "cas", "sso", "single sign-on"],
     description="A Django app for managing CAS and custom user authentication.",
+    include_package_data=True,
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/lgoodridge/UniAuth",
