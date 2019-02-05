@@ -66,15 +66,15 @@
 
                     <div class="row">
                         <div class="col-lg-12">
-                            <span>
+                            <div id="cas-select-container" class="form-group">
                                 <b>Or</b> sign in via CAS:
-                                <select id="cas-select" class="form-control input-block" onchange="location = this.value;">
-                                    <option>(Select Server)</option>
+                                <select id="cas-select" class="form-control input-block" onchange="tmp=this.value;this.value='';location=tmp;">
+                                    <option value="" selected="selected" disabled="disabled" hidden="hidden">(Select Server)</option>
                                     {% for institution in institutions %}
                                     <option value="{{ institution.2 }}{{ query_params }}">{{ institution.0 }}</option>
                                     {% endfor %}
                                 </select>
-                            </span>
+                            </div>
                         </div>
                     </div>
 

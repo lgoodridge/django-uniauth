@@ -27,6 +27,10 @@
     width: 150px;
 }
 
+#cas-select-container {
+    margin-bottom: 0px;
+}
+
 .centered-title {
     display: block;
     text-align: center;
@@ -40,7 +44,7 @@
 #content-wrapper {
     height: 100%;
     margin-left: -15px;
-    overflow: overlay;
+    overflow: auto;
     position: absolute;
     width: 100%;
 }
@@ -157,6 +161,12 @@ input.form-control::placeholder {
 
 #password-reset-verify-success-title {
     padding-bottom: 10px;
+}
+
+@media(min--moz-device-pixel-ratio:0)  {
+    div.form-group select.form-control:not([size]):not([multiple]) {
+        height: auto;
+    }
 }
 
 #settings-accounts-list {
