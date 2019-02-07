@@ -7,6 +7,7 @@ import os
 # Settings used by Uniauth
 LOGIN_URL = '/accounts/login/'
 PASSWORD_RESET_TIMEOUT_DAYS = 3
+UNIAUTH_ALLOW_SHARED_EMAILS = True
 UNIAUTH_ALLOW_STANDALONE_ACCOUNTS = True
 UNIAUTH_FROM_EMAIL = 'uniauth@demoapp.com'
 UNIAUTH_LOGIN_REDIRECT_URL = '/'
@@ -14,7 +15,7 @@ UNIAUTH_LOGOUT_REDIRECT_URL = None
 UNIAUTH_LOGOUT_CAS_COMPLETELY = True
 
 # Uniauth requires an actual email configuration to be set
-# up (to send emails for email validation,changing passwords,
+# up (to send emails for email validation, changing passwords,
 # etc.). This backend just prints emails to the screen.
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 

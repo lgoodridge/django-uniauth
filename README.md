@@ -62,6 +62,7 @@ Uniauth uses the following settings from the `django.contrib.auth` package:
 
 The following custom settings are also used:
 
+ - `UNIAUTH_ALLOW_SHARED_EMAILS`: Whether to allow a single email address to be linked to multiple profiles. Primary email addresses (the value set in the user's `email` field) must be unique regardless. Defaults to `True`.
  - `UNIAUTH_ALLOW_STANDALONE_ACCOUNTS`: Whether to allow users to log in via an Institution Account (such as via CAS) without linking it to a Uniauth profile first. If set to `False`, users will be required to create or link a profile to their Institution Accounts before being able to access views protected by the `@login_required` decorator. Defaults to `True`.
  - `UNIAUTH_FROM_EMAIL`: Determines the "from" email address when UniAuth sends an email, such as for email verification or password resets. Defaults to `uniauth@example.com`.
  - `UNIAUTH_LOGIN_REDIRECT_URL`: Where to redirect the user after logging in, if no next URL is provided. Defaults to `/`.
@@ -121,14 +122,14 @@ UniAuth also implements its own version of the `@login_required` decorator, whic
 The presentation of the views can be easily changed by overriding the appropriate template(s). For example, to add your own stylesheet to the UniAuth templates, create a `uniauth` folder in your `templates` directory, and add a `base-site.html` file to override the default one like so:
 
     {% extends "uniauth/base.html" %}
-    
+
     {% load static from staticfiles %}
-    
+
     {% block shared-head %}
     <link rel="shortcut icon" href="{% static 'uniauth/img/favicon.ico' %}"/>
     <link href="{% static 'path/to/custom-style.css' %}" rel="stylesheet" type="text/css"/>
     {% endblock %}
-    
+
     {% block body %}
     <div id="wrapper">
         <div id="page-wrapper" class="lavender-bg">

@@ -1,6 +1,7 @@
 from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -71,6 +72,19 @@ class LinkedEmail(models.Model):
 
     # Whether the linked email is verified
     is_verified = models.BooleanField(default=False)
+
+    def clean(self):
+        """
+        Ensures an email can't be linked and verified for multiple
+        accounts if UNIAUTH_ALLOW_SHARED_EMAILS is False.
+        """
+        from uniauth.utils import get_setting
+        if not get_setting('UNIAUTH_ALLOW_SHARED_EMAILS') and \
+                LinkedEmail.objects.filter(address=self.address,
+                        is_verified=True) and self.is_verified:
+            raise ValidationError("This email address has already been " +
+                    "linked to another account.")
+        super(LinkedEmail, self).clean()
 
     def __str__(self):
         try:

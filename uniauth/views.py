@@ -591,6 +591,13 @@ def verify_token(request, pk_base64, token):
                 _add_institution_account(user.profile, username_split[1],
                         username_split[2], False)
 
+        # If UNIAUTH_ALLOW_SHARED_EMAILS is False, and there were
+        # pending LinkedEmails for this address on other accounts,
+        # delete them
+        if not get_setting('UNIAUTH_ALLOW_SHARED_EMAILS'):
+            LinkedEmail.objects.filter(address=email.address,
+                    is_verified=False).delete()
+
         return render(request, 'uniauth/verification-success.html', context)
 
     # If anything went wrong, just render the failed verification template

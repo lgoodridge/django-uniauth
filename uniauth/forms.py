@@ -5,12 +5,14 @@ from django.contrib.auth.forms import AuthenticationForm, \
         PasswordResetForm as AuthPasswordResetForm, UserCreationForm
 from django.utils.translation import ugettext_lazy as _
 from uniauth.models import LinkedEmail
+from uniauth.utils import get_setting
 
 
 class AddLinkedEmailForm(forms.Form):
     """
     Form for adding a linked email address to a profile.
     """
+
     email = forms.EmailField(max_length=254, label="Email address")
 
     def __init__(self, user, *args, **kwargs):
@@ -21,12 +23,21 @@ class AddLinkedEmailForm(forms.Form):
         """
         Ensures you can't link an email that has already
         been linked to the current Uniauth profile.
+
+        If UNIAUTH_ALLOW_SHARED_EMAILS is False, ensures
+        the email hasn't been linked to any profile.
         """
         email = self.cleaned_data.get('email')
         if LinkedEmail.objects.filter(profile=self.user.profile,
                 address=email).exists():
             err_msg = ("That email address has already been linked "
                     "to this account.")
+            raise forms.ValidationError(err_msg, code="already_linked")
+        if not get_setting('UNIAUTH_ALLOW_SHARED_EMAILS') and \
+                LinkedEmail.objects.filter(address=email,
+                        is_verified=True).exists():
+            err_msg = ("That email address has already been linked "
+                    "to another account.")
             raise forms.ValidationError(err_msg, code="already_linked")
         return email
 
@@ -50,7 +61,7 @@ class ChangePrimaryEmailForm(forms.Form):
 
     def clean_email(self):
         """
-        Ensures that you can't sign up with an email address
+        Ensures you can't set your primary email address to one
         another verified user already has their primary email.
         """
         email = self.cleaned_data.get('email')
@@ -149,11 +160,20 @@ class SignupForm(UserCreationForm):
         """
         Ensures that you can't sign up with an email address
         another verified user already has their primary email.
+
+        If UNIAUTH_ALLOW_SHARED_EMAILS is False, ensures the
+        email hasn't been linked + verified by any profile.
         """
         email = self.cleaned_data.get('email')
         if get_user_model().objects.filter(email=email).exists():
             err_msg = ("A user with that primary email address already "
                     "exists. Please choose another.")
             raise forms.ValidationError(err_msg, code="email_taken")
+        if not get_setting('UNIAUTH_ALLOW_SHARED_EMAILS') and \
+                LinkedEmail.objects.filter(address=email,
+                        is_verified=True).exists():
+            err_msg = ("That email address has already been linked "
+                    "to another account.")
+            raise forms.ValidationError(err_msg, code="already_linked")
         return email
 
