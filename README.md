@@ -94,9 +94,18 @@ If verification succeeds, it looks for an `InstitutionAccount` matching that CAS
 
 This backend's `authenticate` method accepts an email and password as keyword arguments, and checks the password against all users with that email linked to their account. If an `email` is not explicitly provided, a few other common field names (such as `email_address` and `username`) are checked and used if found.
 
+**Note:** Since the default Django admin page uses same Authentication Backends as the rest of the site, replacing the default `ModelBackend` with this one will result in usernames no longer being recognized on the admin login screen. You will need to log in with a superuser's email address and password, or use the below `UsernameOrLinkedEmailBackend` isnstead.
+
 ### UsernameOrLinkedEmailBackend:
 
 Identical to the above class, except the provided `email` argument is also checked against each user's `username`.
+
+## Commands
+
+UniAuth provides the following managment commands:
+
+ - `add_institution <name> <cas_server_url>` Adds an `Institution` with the provided name and CAS server URL to the database.
+ - `remove_institution <slug>` Removes the `Institution` with the provided slug from the database. This action removes any `InstitutionAccounts` for that instiutiton in the process.
 
 ## Views
 
@@ -155,7 +164,7 @@ The only URL parameter that is not preserved is the `next` variable, which indic
 
 This app should not be added to a project that already has registered users, because those users will not have the required UniAuth profile attached them, and therefore will not be valid.
 
-The app also only supports a small number of institutions by default at the moment. Additional institutions may be added post-installation as needed.
+This app provides only the Princeton institution by default as an example. Additional institutions should be configured post-installation as necessary, using the `add_institution` and `remove_institution` commands.
 
 The source repository contains a `demo-app` directory which demonstrates how to setup a simple Django app to use UniAuth. This app has no functionality, and exists solely to show off the installable `uniauth` app. A quick-start guide for integrating UniAuth can be found [here](https://github.com/lgoodridge/UniAuth/tree/master/demo-app).
 
