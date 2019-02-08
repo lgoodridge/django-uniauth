@@ -21,7 +21,7 @@ from django.views.decorators.debug import sensitive_post_parameters
 from uniauth.decorators import login_required
 from uniauth.forms import AddLinkedEmailForm, ChangePrimaryEmailForm, \
         LinkedEmailActionForm, LoginForm, PasswordChangeForm, \
-        PasswordResetForm, SignupForm
+        PasswordResetForm, SetPasswordForm, SignupForm
 from uniauth.models import Institution, InstitutionAccount, LinkedEmail
 from uniauth.tokens import token_generator
 from uniauth.utils import choose_username, get_protocol, get_random_username, \
@@ -644,6 +644,7 @@ class PasswordResetVerify(PasswordResetConfirmView):
     Verifies the provided token, and prompts user for their
     new password if successful.
     """
+    form_class = SetPasswordForm
     success_url = reverse_lazy('uniauth:password-reset-verify-done')
     template_name = 'uniauth/password-reset-verify.html'
 

@@ -2,7 +2,8 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm, \
         PasswordChangeForm as AuthPasswordChangeForm, \
-        PasswordResetForm as AuthPasswordResetForm, UserCreationForm
+        PasswordResetForm as AuthPasswordResetForm, \
+        SetPasswordForm as AuthSetPasswordForm, UserCreationForm
 from django.utils.translation import ugettext_lazy as _
 from uniauth.models import LinkedEmail
 from uniauth.utils import get_setting
@@ -105,6 +106,53 @@ class LoginForm(AuthenticationForm):
         )
 
 
+def _prevent_shared_email_and_password(linked_emails, new_password):
+    """
+    Ensures the proposed new password is different from all
+    passwords used by users that have a linked email in the
+    provided list.
+    """
+    users_with_shared_email = set()
+
+    # Get the set of users who share an email with this user
+    for linked_email in linked_emails:
+        users = get_user_model().objects.filter(
+                profile__linked_emails__address__iexact=linked_email,
+                profile__linked_emails__is_verified=True,
+                is_active=True
+        ).all()
+        users_with_shared_email.update(users)
+
+    # Make sure the new password doesn't match any of theirs
+    for user in users_with_shared_email:
+        if user.check_password(new_password):
+            err_msg = "Please choose a different password."
+            raise forms.ValidationError(err_msg, code="password_taken")
+
+    return new_password
+
+
+class SetPasswordForm(AuthSetPasswordForm):
+    """
+    Form allowing a user to change their password without
+    entering their old one.
+
+    Subclasses the built-in SetPasswordForm, which does
+    most of the heavy living + has several security features.
+    """
+
+    def clean_new_password1(self):
+        """
+        Prevent users from setting their password to the same
+        password another user with a shared linked email is using.
+        """
+        new_password = self.cleaned_data.get('new_password1')
+        linked_emails = self.user.profile.linked_emails.values_list('address',
+                flat=True)
+        _prevent_shared_email_and_password(linked_emails, new_password)
+        return new_password
+
+
 class PasswordChangeForm(AuthPasswordChangeForm):
     """
     Form allowing a user to change their password by entering
@@ -113,7 +161,17 @@ class PasswordChangeForm(AuthPasswordChangeForm):
     Subclasses the built-in PasswordChangeForm, which does
     most of the heavy lifting + has several security features.
     """
-    pass
+
+    def clean_new_password1(self):
+        """
+        Prevent users from setting their password to the same
+        password another user with a shared linked email is using.
+        """
+        new_password = self.cleaned_data.get('new_password1')
+        linked_emails = self.user.profile.linked_emails.values_list('address',
+                flat=True)
+        _prevent_shared_email_and_password(linked_emails, new_password)
+        return new_password
 
 
 class PasswordResetForm(AuthPasswordResetForm):
@@ -176,4 +234,14 @@ class SignupForm(UserCreationForm):
                     "to another account.")
             raise forms.ValidationError(err_msg, code="already_linked")
         return email
+
+    def clean_password1(self):
+        """
+        Prevent users from setting their password to the same
+        password another user with a shared linked email is using.
+        """
+        email = self.cleaned_data.get('email')
+        password = self.cleaned_data.get('password1')
+        _prevent_shared_email_and_password([email], password)
+        return password
 
