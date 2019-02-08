@@ -42,6 +42,19 @@ class AddLinkedEmailForm(forms.Form):
             raise forms.ValidationError(err_msg, code="already_linked")
         return email
 
+    def clean(self):
+        """
+        Ensure the user does not link more than the
+        maximum number of linked emails per user.
+        """
+        cleaned_data = super(AddLinkedEmailForm, self).clean()
+        max_linked_emails = get_setting('UNIAUTH_MAX_LINKED_EMAILS')
+        if max_linked_emails > 0 and \
+                self.user.profile.linked_emails.count() >= max_linked_emails:
+            err_msg = ("You can not link more than %d emails to your account."
+                    % max_linked_emails)
+            raise forms.ValidationError(err_msg, code="max_emails")
+        return cleaned_data
 
 class ChangePrimaryEmailForm(forms.Form):
     """

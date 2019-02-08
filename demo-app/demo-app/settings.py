@@ -13,6 +13,7 @@ UNIAUTH_FROM_EMAIL = 'uniauth@demoapp.com'
 UNIAUTH_LOGIN_REDIRECT_URL = '/'
 UNIAUTH_LOGOUT_REDIRECT_URL = None
 UNIAUTH_LOGOUT_CAS_COMPLETELY = True
+UNIAUTH_MAX_LINKED_EMAILS = 20
 
 # Uniauth requires an actual email configuration to be set
 # up (to send emails for email validation, changing passwords,

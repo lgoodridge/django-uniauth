@@ -77,13 +77,25 @@ class LinkedEmail(models.Model):
         """
         Ensures an email can't be linked and verified for multiple
         accounts if UNIAUTH_ALLOW_SHARED_EMAILS is False.
+
+        Also ensures a user does not link more than the maximum
+        number of linked emails per user.
         """
         from uniauth.utils import get_setting
+
+        # Check for shared emails if necessary
         if not get_setting('UNIAUTH_ALLOW_SHARED_EMAILS') and \
                 LinkedEmail.objects.filter(address=self.address,
                         is_verified=True) and self.is_verified:
             raise ValidationError("This email address has already been " +
                     "linked to another account.")
+
+        # Ensure a user doesn't link more than the maximum
+        max_linked_emails = get_setting('UNIAUTH_MAX_LINKED_EMAILS')
+        if max_linked_emails > 0 and \
+                self.profile.linked_emails.count() >= max_linked_emails:
+            raise ValidationError(("You can not link more than %d emails "
+                "to your account.") % max_linked_emails)
         super(LinkedEmail, self).clean()
 
     def __str__(self):
