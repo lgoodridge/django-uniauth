@@ -6,7 +6,7 @@ from django.contrib.auth.views import PasswordResetCompleteView, \
         PasswordResetConfirmView, PasswordResetDoneView, PasswordResetView
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.http import Http404, HttpResponseBadRequest, \
         HttpResponseRedirect
 from django.shortcuts import render
@@ -24,9 +24,9 @@ from uniauth.forms import AddLinkedEmailForm, ChangePrimaryEmailForm, \
         PasswordResetForm, SetPasswordForm, SignupForm
 from uniauth.models import Institution, InstitutionAccount, LinkedEmail
 from uniauth.tokens import token_generator
-from uniauth.utils import choose_username, get_protocol, get_random_username, \
-        get_redirect_url, get_service_url, get_setting, is_tmp_user, \
-        is_unlinked_account
+from uniauth.utils import choose_username, get_account_username_split, \
+        get_protocol, get_random_username, get_redirect_url, get_service_url, \
+        get_setting, is_tmp_user, is_unlinked_account
 
 
 def _get_global_context(request):
@@ -38,10 +38,10 @@ def _get_global_context(request):
     # Add a list of Institution triples, with each
     # containing: (name, slug, CAS login url)
     institutions = Institution.objects.all()
-    institutions = map(lambda x: (x.name, x.slug,
+    institutions = list(map(lambda x: (x.name, x.slug,
             reverse('uniauth:cas-login', args=[x.slug]),
             reverse('uniauth:link-from-profile', args=[x.slug])),
-            institutions)
+            institutions))
     context['institutions'] = institutions
 
     # Add the query parameters, as a string
@@ -86,8 +86,43 @@ def login(request):
     if request.user.is_authenticated:
         return _login_success(request.user, next_url)
 
-    # If it's a POST request, attempt to validate the form
-    if request.method == "POST":
+    display_standard = get_setting('UNIAUTH_LOGIN_DISPLAY_STANDARD')
+    display_cas = get_setting('UNIAUTH_LOGIN_DISPLAY_CAS')
+    num_institutions = len(context['institutions'])
+
+    # Ensure the login settings are configured correctly
+    if not display_standard and not display_cas:
+        err_msg = "At least one of '%s' and '%s' must be True." % \
+                ('UNIAUTH_LOGIN_DISPLAY_STANDARD', 'UNIAUTH_LOGIN_DISPLAY_CAS')
+        raise ImproperlyConfigured(err_msg)
+    if display_cas and num_institutions == 0:
+        err_msg = ("'%s' is True, but there are no Institutions in the "
+                "database to log into!") % 'UNIAUTH_LOGIN_DISPLAY_CAS'
+        raise ImproperlyConfigured(err_msg)
+
+    context['display_standard'] = display_standard
+    context['display_cas'] = display_cas
+    context['num_institutions'] = num_institutions
+
+    # If we aren't displaying the standard login form,
+    # we're just displaying the CAS login options
+    if not display_standard:
+        institutions = context['institutions']
+        query_params = context['query_params']
+
+        # If there's only one possible institution to log
+        # into, redirect to its CAS login page immediately
+        if num_institutions == 1:
+            return HttpResponseRedirect(reverse('uniauth:cas-login',
+                    args=[institutions[0][1]]) + '?' + query_params)
+
+        # Otherwise, render the page (without the Login form)
+        else:
+            return render(request, 'uniauth/login.html', context)
+
+    # If we are displaying the login form, and it's
+    # a POST request, attempt to validate the form
+    elif request.method == "POST":
         form = LoginForm(request, request.POST)
 
         # Authentication successful: setup session + proceed
@@ -463,7 +498,7 @@ def link_to_profile(request):
 
         # Authentication successful
         if form.is_valid():
-            username_split = request.user.username.split("-")
+            username_split = get_account_username_split(request.user.username)
 
             # Log in as the authenticated Uniauth user
             user = form.get_user()
@@ -527,7 +562,7 @@ def link_from_profile(request, institution):
         # institution account has not been linked yet + proceed
         if user:
             if is_unlinked_account(user):
-                username_split = user.username.split("-")
+                username_split = get_account_username_split(user.username)
                 _add_institution_account(request.user.profile,
                         username_split[1], username_split[2], True)
 
@@ -578,7 +613,7 @@ def verify_token(request, pk_base64, token):
         user = email.profile.user
         if is_tmp_user(user) or is_unlinked_account(user):
             context['is_signup'] = True
-            username_split = user.username.split("-")
+            username_split = get_account_username_split(user.username)
 
             # Change the email + username to the verified email
             user.email = email.address

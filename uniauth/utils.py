@@ -13,9 +13,11 @@ DEFAULT_SETTING_VALUES = {
     'UNIAUTH_ALLOW_STANDALONE_ACCOUNTS': True,
     'UNIAUTH_ALLOW_SHARED_EMAILS': True,
     'UNIAUTH_FROM_EMAIL': 'uniauth@example.com',
+    'UNIAUTH_LOGIN_DISPLAY_STANDARD': True,
+    'UNIAUTH_LOGIN_DISPLAY_CAS': True,
     'UNIAUTH_LOGIN_REDIRECT_URL': '/',
-    'UNIAUTH_LOGOUT_REDIRECT_URL': None,
     'UNIAUTH_LOGOUT_CAS_COMPLETELY': False,
+    'UNIAUTH_LOGOUT_REDIRECT_URL': None,
     'UNIAUTH_MAX_LINKED_EMAILS': 20,
 }
 
@@ -34,6 +36,22 @@ def choose_username(email):
     while user_model.objects.filter(username=email+get_suffix(num)).exists():
         num += 1
     return email + get_suffix(num)
+
+
+def get_account_username_split(username):
+    """
+    Accepts the username for an unlinked InstitutionAccount
+    and return a tuple containing the following:
+      0: Account Type (e.g. 'cas')
+      1: Institution Slug
+      2: User ID for the institution
+    """
+    username_split = username.split("-")
+    if len(username_split) < 3:
+        raise ValueError("Value passed to get_account_username_split " +
+                "was not the username for an unlinked InstitutionAccount.")
+    slug = "-".join(username_split[1:len(username_split)-1])
+    return (username_split[0], slug, username_split[len(username_split)-1])
 
 
 def get_protocol(request):

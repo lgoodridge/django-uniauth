@@ -21,10 +21,18 @@
     color: #FFFFFF;
 }
 
+#cas-link {
+    padding-left: 5px;
+}
+
 #cas-select {
     display: inline-block;
     margin-left: 14px;
     width: 150px;
+}
+
+#cas-select.only-cas-login {
+    margin-left: 6px;
 }
 
 #cas-select-container {
@@ -64,6 +72,10 @@
 
 #forgot-password-link {
     float: right;
+}
+
+div.hr-line-dashed.only-cas-login {
+    margin-top
 }
 
 button.icon-btn {
@@ -117,6 +129,14 @@ input.form-control::placeholder {
 
 #login-form-spacer {
     height: calc(40% - 147px);
+}
+
+#login-form-spacer.only-cas-login {
+    height: calc(40% - 72px);
+}
+
+#login-form-wrapper.only-cas-login div.form-group {
+    margin-bottom: 0px;
 }
 
 #login-title {

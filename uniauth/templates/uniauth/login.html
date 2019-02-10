@@ -13,79 +13,92 @@
 <!-- Page Content -->
 {% block content %}
 
-<div id="login-form-spacer" class="spacer"></div>
+<div id="login-form-spacer" class="spacer {% if not display_standard %}only-cas-login{% endif %}"></div>
 
-<div id="login-form-wrapper" class="uniauth-wrapper wrapper wrapper-content">
+<div id="login-form-wrapper" class="uniauth-wrapper wrapper wrapper-content {% if not display_standard %}only-cas-login{% endif %}">
     <div class="row">
         <div class="col-lg-12">
             <div class="ibox float-e-margins shadow-lg">
                 <div class="ibox-content">
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <form method="POST" class="post-form">
-                                {% csrf_token %}
 
-                                {% if form.non_field_errors %}
-                                <div class="row">
-                                    <div class="col-lg-12">
-                                        <div class="form-group has-error">
-                                            <span id="error-text" class="form-error help-block">
-                                                {{ form.non_field_errors.as_text|slice:"2:" }}
-                                            </span>
-                                        </div>
-                                    </div>
+                    {% if form and form.non_field_errors %}
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="form-group has-error">
+                                    <span id="error-text" class="form-error help-block">
+                                        {{ form.non_field_errors.as_text|slice:"2:" }}
+                                    </span>
                                 </div>
-                                {% endif %}
-
-                                <div class="row">
-                                    <div class="col-lg-12">
-                                        <div class="form-group">
-                                            <span id="login-title" class="simple-title">Sign in with <span id="header-uniauth-text">Uniauth</span></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-lg-12">
-                                        <input id="id_username" name="username" type="email" placeholder="Email Address" class="form-control input-block" value="{{ form.username.value|default_if_none:"" }}" autocapitalize="off" autocorrect="off" autofocus required />
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-lg-12">
-                                        <input id="id_password" name="password" type="password" placeholder="Password" class="form-control input-block" value="{{ form.password.value|default_if_none:"" }}" required />
-                                    </div>
-                                </div>
-
-                                <button id="submit-btn" type="submit" class="save btn btn-action">Sign In!</button>
-                            </form>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="hr-line-dashed"></div>
+                    {% endif %}
 
                     <div class="row">
                         <div class="col-lg-12">
-                            <div id="cas-select-container" class="form-group">
-                                <b>Or</b> sign in via CAS:
-                                <select id="cas-select" class="form-control input-block" onchange="tmp=this.value;this.value='';location=tmp;">
-                                    <option value="" selected="selected" disabled="disabled" hidden="hidden">(Select Server)</option>
-                                    {% for institution in institutions %}
-                                    <option value="{{ institution.2 }}{{ query_params }}">{{ institution.0 }}</option>
-                                    {% endfor %}
-                                </select>
+                            <div class="form-group">
+                                <span id="login-title" class="simple-title">Sign in with <span id="header-uniauth-text">Uniauth</span></span>
                             </div>
                         </div>
                     </div>
 
+                    {% if display_standard %}
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <form method="POST" class="post-form">
+                                    {% csrf_token %}
+
+                                    <div class="row">
+                                        <div class="col-lg-12">
+                                            <input id="id_username" name="username" type="email" placeholder="Email Address" class="form-control input-block" value="{{ form.username.value|default_if_none:"" }}" autocapitalize="off" autocorrect="off" autofocus required />
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-lg-12">
+                                            <input id="id_password" name="password" type="password" placeholder="Password" class="form-control input-block" value="{{ form.password.value|default_if_none:"" }}" required />
+                                        </div>
+                                    </div>
+
+                                    <button id="submit-btn" type="submit" class="save btn btn-action">Sign In!</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endif %}
+
                     <div class="hr-line-dashed"></div>
 
-                    <div class="row">
-                        <div class="col-lg-12">
-                            <span id="create-account-link"><a href="{% url 'uniauth:signup' %}{{ query_params }}">Create an Account</a></span>
-                            <span id="forgot-password-link"><a href="{% url 'uniauth:password-reset' %}{{ query_params }}">Forgot Password</a></span>
+                    {% if display_cas %}
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div id="cas-select-container" class="form-group">
+                                    {% if display_standard %}<b>Or</b> sign in via CAS:{% else %}Choose CAS Server:{% endif %}
+                                    {% if num_institutions == 1 %}
+                                        <a id="cas-link" href="{{ institutions.0.2 }}{{ query_params }}">To {{ institutions.0.0 }} CAS</a>
+                                    {% else %}
+                                        <select id="cas-select" class="form-control input-block {% if not display_standard %}only-cas-login{% endif %}" onchange="tmp=this.value;this.value='';location=tmp;">
+                                            <option value="" selected="selected" disabled="disabled" hidden="hidden">(Select Server)</option>
+                                            {% for institution in institutions %}
+                                            <option value="{{ institution.2 }}{{ query_params }}">{{ institution.0 }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    {% endif %}
+
+                    {% if display_standard and display_cas %}
+                        <div class="hr-line-dashed"></div>
+                    {% endif %}
+
+                    {% if display_standard %}
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <span id="create-account-link"><a href="{% url 'uniauth:signup' %}{{ query_params }}">Create an Account</a></span>
+                                <span id="forgot-password-link"><a href="{% url 'uniauth:password-reset' %}{{ query_params }}">Forgot Password</a></span>
+                            </div>
+                        </div>
+                    {% endif %}
 
                 </div>
             </div>

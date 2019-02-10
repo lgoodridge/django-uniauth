@@ -65,6 +65,8 @@ The following custom settings are also used:
  - `UNIAUTH_ALLOW_SHARED_EMAILS`: Whether to allow a single email address to be linked to multiple profiles. Primary email addresses (the value set in the user's `email` field) must be unique regardless. Defaults to `True`.
  - `UNIAUTH_ALLOW_STANDALONE_ACCOUNTS`: Whether to allow users to log in via an Institution Account (such as via CAS) without linking it to a Uniauth profile first. If set to `False`, users will be required to create or link a profile to their Institution Accounts before being able to access views protected by the `@login_required` decorator. Defaults to `True`.
  - `UNIAUTH_FROM_EMAIL`: Determines the "from" email address when UniAuth sends an email, such as for email verification or password resets. Defaults to `uniauth@example.com`.
+ - `UNIAUTH_LOGIN_DISPLAY_STANDARD`: Whether the email address / password form is shown on the `login` view. If `False`, the form, "Create an Account" link, and "Forgot Password" link are hidden, and POST requests for the view will be ignored. Defaults to `True`.
+ - `UNIAUTH_LOGIN_DISPLAY_CAS`: Whether the option to sign in via CAS is shown on the `login` view. If `True`, there must be at least one `Institution` in the database to log into. Also, at least one of `UNIAUTH_LOGIN_DISPLAY_STANDARD` or `UNIAUTH_LOGIN_DISPLAY_CAS` must be `True`. Violating either of these constraints will result in an `ImproperlyConfigured` Exception. Defaults to `True`.
  - `UNIAUTH_LOGIN_REDIRECT_URL`: Where to redirect the user after logging in, if no next URL is provided. Defaults to `/`.
  - `UNIAUTH_LOGOUT_REDIRECT_URL`: Where to redirect the user after logging out, if no next URL is provided. If this setting is `None`, and a next URL is not provided, the logout template is rendered instead. Defaults to `None`.
  - `UNIAUTH_LOGOUT_CAS_COMPLETELY`: Whether to log the user out of CAS on logout if the user originally logged in via CAS. Defaults to `False`.
@@ -94,7 +96,7 @@ If verification succeeds, it looks for an `InstitutionAccount` matching that CAS
 
 This backend's `authenticate` method accepts an email and password as keyword arguments, and checks the password against all users with that email linked to their account. If an `email` is not explicitly provided, a few other common field names (such as `email_address` and `username`) are checked and used if found.
 
-**Note:** Since the default Django admin page uses same Authentication Backends as the rest of the site, replacing the default `ModelBackend` with this one will result in usernames no longer being recognized on the admin login screen. You will need to log in with a superuser's email address and password, or use the below `UsernameOrLinkedEmailBackend` isnstead.
+**Note:** Since the default Django admin page uses same Authentication Backends as the rest of the site, replacing the default `ModelBackend` with this one will result in usernames no longer being recognized on the admin login screen. You will need to log in with a superuser's email address and password, or use the below `UsernameOrLinkedEmailBackend` instead.
 
 ### UsernameOrLinkedEmailBackend:
 
