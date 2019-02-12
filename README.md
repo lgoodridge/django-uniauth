@@ -1,5 +1,6 @@
 # django-uniauth
 
+[![travis][travis-image]][travis-url]
 [![djangover][djangover-image]][djangover-url]
 [![pypi][pypi-image]][pypi-url]
 [![pyver][pyver-image]][pyver-url]
@@ -185,3 +186,5 @@ The source repository contains a `demo_app` directory which demonstrates how to 
 [status-image]: https://img.shields.io/pypi/status/django-uniauth.svg
 [status-url]: https://pypi.python.org/pypi/django-uniauth/
 
+[travis-image]: https://img.shields.io/travis/lgoodridge/UniAuth.svg?style=flat
+[travis-url]: https://travis-ci.com/lgoodridge/UniAuth.svg?branch=master
