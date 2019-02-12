@@ -55,12 +55,12 @@ AUTHENTICATION_BACKENDS = [
     'uniauth.backends.CASBackend',
 ]
 
-ROOT_URLCONF = 'demo-app.urls'
+ROOT_URLCONF = 'demo_app.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'demo-app', 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'demo_app', 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -73,7 +73,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'demo-app.wsgi.application'
+WSGI_APPLICATION = 'demo_app.wsgi.application'
 
 # Database
 DATABASES = {

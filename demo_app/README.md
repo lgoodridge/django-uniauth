@@ -14,8 +14,8 @@ From the repository root:
     pip install python-cas
     pip install django-uniauth
 
-    # Move into the demo-app
-    cd demo-app
+    # Move into the demo_app
+    cd demo_app
 
     # Apply database migrations
     python manage.py migrate

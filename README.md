@@ -168,7 +168,7 @@ This app should not be added to a project that already has registered users, bec
 
 This app provides only the Princeton institution by default as an example. Additional institutions should be configured post-installation as necessary, using the `add_institution` and `remove_institution` commands.
 
-The source repository contains a `demo-app` directory which demonstrates how to setup a simple Django app to use UniAuth. This app has no functionality, and exists solely to show off the installable `uniauth` app. A quick-start guide for integrating UniAuth can be found [here](https://github.com/lgoodridge/UniAuth/tree/master/demo-app).
+The source repository contains a `demo_app` directory which demonstrates how to setup a simple Django app to use UniAuth. This app has no functionality, and exists solely to show off the installable `uniauth` app. A quick-start guide for integrating UniAuth can be found [here](https://github.com/lgoodridge/UniAuth/tree/master/demo_app).
 
 [djangover-image]: https://img.shields.io/pypi/djversions/django-uniauth.svg?label=django
 [djangover-url]: https://pypi.python.org/pypi/django-uniauth/
