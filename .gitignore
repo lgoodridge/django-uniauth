@@ -34,6 +34,10 @@ demo-app/db.sqlite3
 # PyBuilder
 target/
 
+# Testing Tools
+.coverage
+.tox/
+
 # Temp Files
 .*.sw*
 

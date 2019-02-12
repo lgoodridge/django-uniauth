@@ -1,9 +1,9 @@
 # django-uniauth
 
 [![travis][travis-image]][travis-url]
+[![pyver][pyver-image]][pyver-url]
 [![djangover][djangover-image]][djangover-url]
 [![pypi][pypi-image]][pypi-url]
-[![pyver][pyver-image]][pyver-url]
 
 `django-uniauth` is an app for allowing authentication through services commonly used by universities, such as [CAS](https://www.apereo.org/projects/cas), while also permitting custom authentication schemes. This approach allows developers to leverage the user data contained within university databases, without strictly tethering themselves to those services.
 
