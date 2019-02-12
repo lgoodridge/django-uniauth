@@ -26,7 +26,7 @@ var/
 *.log
 
 # Ignore local database file
-demo-app/db.sqlite3
+demo_app/db.sqlite3
 
 # Ignore vagrant build files
 .vagrant/
