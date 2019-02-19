@@ -17,7 +17,7 @@ class AddLinkedEmailForm(forms.Form):
     email = forms.EmailField(max_length=254, label="Email address")
 
     def __init__(self, user, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(AddLinkedEmailForm, self).__init__(*args, **kwargs)
         self.user = user
 
     def clean_email(self):
@@ -56,6 +56,7 @@ class AddLinkedEmailForm(forms.Form):
             raise forms.ValidationError(err_msg, code="max_emails")
         return cleaned_data
 
+
 class ChangePrimaryEmailForm(forms.Form):
     """
     Form for changing a user's primary email address.
@@ -65,7 +66,7 @@ class ChangePrimaryEmailForm(forms.Form):
         """
         Set the choices to the current profile's verified linked emails.
         """
-        super().__init__(*args, **kwargs)
+        super(ChangePrimaryEmailForm, self).__init__(*args, **kwargs)
         self.user = user
         verified_emails = LinkedEmail.objects.filter(profile=self.user.profile,
                 is_verified=True).all()
@@ -113,7 +114,7 @@ class LoginForm(AuthenticationForm):
         Change the invalid login error message to mention
         using a correct email address instead of username.
         """
-        super().__init__(request, *args, **kwargs)
+        super(LoginForm, self).__init__(request, *args, **kwargs)
         self.error_messages['invalid_login'] = _(
                 "Please enter a correct email and password."
         )

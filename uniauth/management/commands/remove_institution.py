@@ -4,9 +4,10 @@ This command is used to remove an Institution from the database.
 Execution: python manage.py remove_institution <slug>
 """
 
-from builtins import input
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from uniauth.models import Institution
+from uniauth.utils import get_input
+
 
 class Command(BaseCommand):
     help = "Removes an institution from the database."
@@ -20,10 +21,9 @@ class Command(BaseCommand):
         try:
             institution = Institution.objects.get(slug=slug)
         except Institution.DoesNotExist:
-            self.stdout.write("No institution with slug '" + slug + "' exists.")
-            return
+            raise CommandError("No institution with slug '%s' exists." % slug)
 
-        answer = input("Are you sure you want to delete institution '" +
+        answer = get_input("Are you sure you want to delete institution '" +
                 str(institution) +"'?\nThis will also delete all " +
                 "InstitutionAccounts for that institution.\nAnswer [y/n]: ")
         if answer == "y" or answer == "yes":

@@ -59,6 +59,17 @@ def get_account_username_split(username):
     return (username_split[0], slug, username_split[len(username_split)-1])
 
 
+def get_input(prompt):
+    """
+    Forwards to either raw_input or input, depending on
+    Python version
+    """
+    try:
+        return raw_input(prompt)
+    except NameError:
+        return input(prompt)
+
+
 def get_protocol(request):
     """
     Returns the protocol request is using ('http' | 'https')

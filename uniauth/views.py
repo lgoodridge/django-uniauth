@@ -671,7 +671,7 @@ class PasswordReset(PasswordResetView):
         Add global context data before composing reset email
         """
         self.extra_email_context = _get_global_context(self.request)
-        return super().form_valid(form)
+        return super(PasswordReset, self).form_valid(form)
 
 
 class PasswordResetDone(PasswordResetDoneView):
@@ -699,7 +699,7 @@ class PasswordResetVerify(PasswordResetConfirmView):
         query_params = _get_global_context(self.request)['query_params']
         if query_params:
             self.request.session['password-reset-query-params'] = query_params
-        return super().dispatch(*args, **kwargs)
+        return super(PasswordResetVerify, self).dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         """
@@ -708,7 +708,7 @@ class PasswordResetVerify(PasswordResetConfirmView):
         query_params = self.request.session\
                 .pop('password-reset-query-params', '')
         self.success_url += query_params
-        return super().form_valid(form)
+        return super(PasswordResetVerify, self).form_valid(form)
 
 
 class PasswordResetVerifyDone(PasswordResetCompleteView):
@@ -721,7 +721,8 @@ class PasswordResetVerifyDone(PasswordResetCompleteView):
         """
         Add global context data to template context.
         """
-        context = super().get_context_data(**kwargs)
+        context = super(PasswordResetVerifyDone, self)\
+                .get_context_data(**kwargs)
         context.update(_get_global_context(self.request))
         return context
 
