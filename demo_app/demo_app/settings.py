@@ -16,6 +16,7 @@ UNIAUTH_LOGIN_REDIRECT_URL = '/'
 UNIAUTH_LOGOUT_CAS_COMPLETELY = True
 UNIAUTH_LOGOUT_REDIRECT_URL = None
 UNIAUTH_MAX_LINKED_EMAILS = 20
+UNIAUTH_PERFORM_RECURSIVE_MERGING = True
 
 # Uniauth requires an actual email configuration to be set
 # up (to send emails for email validation, changing passwords,

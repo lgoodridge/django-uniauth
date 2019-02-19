@@ -21,6 +21,7 @@ from uniauth.decorators import login_required
 from uniauth.forms import AddLinkedEmailForm, ChangePrimaryEmailForm, \
         LinkedEmailActionForm, LoginForm, PasswordChangeForm, \
         PasswordResetForm, SetPasswordForm, SignupForm
+from uniauth.merge import merge_model_instances
 from uniauth.models import Institution, InstitutionAccount, LinkedEmail
 from uniauth.tokens import token_generator
 from uniauth.utils import choose_username, get_account_username_split, \
@@ -448,22 +449,14 @@ def settings(request):
     return render(request, 'uniauth/settings.html', context)
 
 
-def _add_institution_account(profile, slug, cas_id, deactivate=True):
+def _add_institution_account(profile, slug, cas_id):
     """
     Accepts an institution slug and cas ID and links an
     InsitutionAccount to the provided Uniauth user.
-
-    Deactivates the corresponding unlinked account user
-    if deactivate is True.
     """
     institution = Institution.objects.get(slug=slug)
-    account = InstitutionAccount.objects.create(profile=profile,
+    InstitutionAccount.objects.create(profile=profile,
             institution=institution, cas_id=cas_id)
-    if deactivate:
-        username = "cas-%s-%s" % (slug, cas_id)
-        old_user = get_user_model().objects.get(username=username)
-        old_user.is_active = False
-        old_user.save()
 
 
 def link_to_profile(request):
@@ -508,16 +501,18 @@ def link_to_profile(request):
 
         # Authentication successful
         if form.is_valid():
+            unlinked_user = request.user
             username_split = get_account_username_split(request.user.username)
 
             # Log in as the authenticated Uniauth user
             user = form.get_user()
             auth_login(request, user)
 
-            # Add the institution account described by the username
-            # + deactivate the old, unlinked institution account
+            # Merge the unlinked account into the logged in profile,
+            # then add the institution account described by the username
+            merge_model_instances(user, [unlinked_user])
             _add_institution_account(user.profile, username_split[1],
-                    username_split[2], True)
+                    username_split[2])
 
             slug = username_split[1]
             context['institution'] = Institution.objects.get(slug=slug)
@@ -568,13 +563,14 @@ def link_from_profile(request, institution):
         user = authenticate(request=request, institution=institution,
                 ticket=ticket, service=service_url)
 
-        # Authentication successful: link to Uniauth profile if the
-        # institution account has not been linked yet + proceed
+        # Authentication successful: link to Uniauth profile if
+        # the institution account has not been linked yet + proceed
         if user:
             if is_unlinked_account(user):
+                merge_model_instances(request.user, [user])
                 username_split = get_account_username_split(user.username)
                 _add_institution_account(request.user.profile,
-                        username_split[1], username_split[2], True)
+                        username_split[1], username_split[2])
 
             return HttpResponseRedirect(next_url)
 
@@ -623,7 +619,7 @@ def verify_token(request, pk_base64, token):
         user = email.profile.user
         if is_tmp_user(user) or is_unlinked_account(user):
             context['is_signup'] = True
-            username_split = get_account_username_split(user.username)
+            old_username = user.username
 
             # Change the email + username to the verified email
             user.email = email.address
@@ -632,9 +628,10 @@ def verify_token(request, pk_base64, token):
 
             # If the user was created via CAS, add the institution
             # account described by the temporary username
-            if username_split[0] == "cas":
+            if old_username.startswith("cas"):
+                username_split = get_account_username_split(old_username)
                 _add_institution_account(user.profile, username_split[1],
-                        username_split[2], False)
+                        username_split[2])
 
         # If UNIAUTH_ALLOW_SHARED_EMAILS is False, and there were
         # pending LinkedEmails for this address on other accounts,

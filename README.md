@@ -71,6 +71,7 @@ The following custom settings are also used:
  - `UNIAUTH_LOGOUT_REDIRECT_URL`: Where to redirect the user after logging out, if no next URL is provided. If this setting is `None`, and a next URL is not provided, the logout template is rendered instead. Defaults to `None`.
  - `UNIAUTH_LOGOUT_CAS_COMPLETELY`: Whether to log the user out of CAS on logout if the user originally logged in via CAS. Defaults to `False`.
  - `UNIAUTH_MAX_LINKED_EMAILS`: The maximum number of emails a user can link to their profile. If this value is less than or equal to 0, there is no limit to the number of linked emails. Defaults to 20.
+ - `UNIAUTH_PERFORM_RECURSIVE_MERGING`: Whether to attempt to recursively merge One-to-One fields when merging users due to linking two existing accounts together. If `False`, One-to-One fields for the user being linked in will be deleted if the primary user has a non-null value for that field.
 
 ## Users in UniAuth
 
