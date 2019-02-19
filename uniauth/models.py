@@ -68,7 +68,7 @@ class LinkedEmail(models.Model):
             on_delete=models.CASCADE, null=False)
 
     # The email address
-    address = models.EmailField(null=False)
+    address = models.EmailField(null=False, blank=False)
 
     # Whether the linked email is verified
     is_verified = models.BooleanField(default=False)
@@ -112,13 +112,14 @@ class Institution(models.Model):
     """
 
     # Name of the institution
-    name = models.CharField(max_length=30, null=False)
+    name = models.CharField(max_length=30, null=False, blank=False)
 
     # Slugified version of name
-    slug = models.CharField(max_length=30, null=False, unique=True)
+    slug = models.CharField(max_length=30, null=False, blank=False,
+            unique=True)
 
     # CAS server location
-    cas_server_url = models.URLField(null=False)
+    cas_server_url = models.URLField(null=False, blank=False)
 
     def __str__(self):
         try:
@@ -142,7 +143,7 @@ class InstitutionAccount(models.Model):
             on_delete=models.CASCADE, null=False)
 
     # The ID used by the CAS server
-    cas_id = models.CharField(max_length=30, null=False)
+    cas_id = models.CharField(max_length=30, null=False, blank=False)
 
     def __str__(self):
         try:

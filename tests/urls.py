@@ -2,8 +2,8 @@
 URL configuration for testing.
 """
 
-from django.urls import include, path
+from django.conf.urls import include, url
 
 urlpatterns = [
-    path('accounts/', include('uniauth.urls', namespace='uniauth')),
+    url('accounts/', include('uniauth.urls', namespace='uniauth')),
 ]

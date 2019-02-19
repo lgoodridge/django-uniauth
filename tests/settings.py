@@ -6,11 +6,11 @@ import os
 
 # Uniauth requires an actual email configuration to be set
 # up (to send emails for email validation, changing passwords,
-# etc.). This backend just prints emails to the screen.
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# etc.). This backend just stores emails in django.core.mail.outbox
+EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 
 # Definitely change these for real applications
-DEBUG = True
+TESTING = True
 SECRET_KEY = 'FAKE_SECRET'
 ALLOWED_HOSTS = ['*']
 
