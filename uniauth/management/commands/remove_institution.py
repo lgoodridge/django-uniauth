@@ -4,8 +4,8 @@ This command is used to remove an Institution from the database.
 Execution: python manage.py remove_institution <slug>
 """
 
+from builtins import input
 from django.core.management.base import BaseCommand
-from django.utils.six.moves import input
 from uniauth.models import Institution
 
 class Command(BaseCommand):

@@ -3,7 +3,11 @@ from django.contrib.auth import get_user_model, REDIRECT_FIELD_NAME
 from django.shortcuts import resolve_url
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.utils.six.moves import urllib_parse
+try:
+    from urllib import urlencode
+    from urlparse import urlunparse
+except ImportError:
+    from urllib.parse import urlencode, urlunparse
 
 
 # The default value for all settings used by Uniauth
@@ -87,7 +91,7 @@ def get_redirect_url(request, use_referer=False, default_url=None):
         if not redirect_url:
             redirect_url = resolve_url(default_url or
                     get_setting('UNIAUTH_LOGIN_REDIRECT_URL'))
-        prefix = urllib_parse.urlunparse(
+        prefix = urlunparse(
                 (get_protocol(request), request.get_host(), '', '', '', ''),
         )
         if redirect_url.startswith(prefix):
@@ -103,14 +107,14 @@ def get_service_url(request, redirect_url=None):
     Accepts an optional redirect_url, which defaults
     to the value of get_redirect_url(request).
     """
-    service_url = urllib_parse.urlunparse(
+    service_url = urlunparse(
             (get_protocol(request), request.get_host(),
             request.path, '', '', ''),
     )
-    service_url += ('&' if '?' in service_url else '?')
-    service_url += urllib_parse.urlencode({
-            REDIRECT_FIELD_NAME: redirect_url or get_redirect_url(request)
-    })
+    query_params = request.GET.copy()
+    query_params[REDIRECT_FIELD_NAME] = redirect_url or \
+            get_redirect_url(request)
+    service_url += '?' + urlencode(query_params)
     return service_url
 
 

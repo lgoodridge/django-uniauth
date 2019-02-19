@@ -15,7 +15,6 @@ from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes, force_text
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from django.utils.six.moves import urllib_parse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 from uniauth.decorators import login_required
@@ -27,6 +26,11 @@ from uniauth.tokens import token_generator
 from uniauth.utils import choose_username, get_account_username_split, \
         get_protocol, get_random_username, get_redirect_url, get_service_url, \
         get_setting, is_tmp_user, is_unlinked_account
+try:
+    from urllib import urlencode
+    from urlparse import urlunparse
+except ImportError:
+    from urllib.parse import urlencode, urlunparse
 
 
 def _get_global_context(request):
@@ -35,8 +39,8 @@ def _get_global_context(request):
     """
     context = {}
 
-    # Add a list of Institution triples, with each
-    # containing: (name, slug, CAS login url)
+    # Add a list of Institution tuples, with each containing:
+    # (name, slug, CAS login url, Profile link URL)
     institutions = Institution.objects.all()
     institutions = list(map(lambda x: (x.name, x.slug,
             reverse('uniauth:cas-login', args=[x.slug]),
@@ -45,25 +49,31 @@ def _get_global_context(request):
     context['institutions'] = institutions
 
     # Add the query parameters, as a string
-    query_params = urllib_parse.urlencode(request.GET)
+    query_params = urlencode(request.GET)
     prefix = '?' if query_params else ''
     context['query_params'] = prefix + query_params
 
     return context
 
 
-def _login_success(user, next_url):
+def _login_success(request, user, next_url):
     """
     Determines where to go upon successful authentication:
     Redirects to link tmp account page if user is a temporary
     user, redirects to next_url otherwise
     """
+    query_params = request.GET.copy()
     if is_tmp_user(user):
-        params = urllib_parse.urlencode({'next': next_url})
+        query_params[REDIRECT_FIELD_NAME] = next_url
         return HttpResponseRedirect(reverse('uniauth:link-to-profile') + \
-                '?' + params)
+                '?' + urlencode(query_params))
     else:
-        return HttpResponseRedirect(next_url)
+        suffix = ''
+        if REDIRECT_FIELD_NAME in query_params:
+            del query_params[REDIRECT_FIELD_NAME]
+        if len(query_params) > 0:
+            suffix = '?' + urlencode(query_params)
+        return HttpResponseRedirect(next_url + suffix)
 
 
 def login(request):
@@ -84,7 +94,7 @@ def login(request):
 
     # If the user is already authenticated, proceed to next page
     if request.user.is_authenticated:
-        return _login_success(request.user, next_url)
+        return _login_success(request, request.user, next_url)
 
     display_standard = get_setting('UNIAUTH_LOGIN_DISPLAY_STANDARD')
     display_cas = get_setting('UNIAUTH_LOGIN_DISPLAY_CAS')
@@ -130,7 +140,7 @@ def login(request):
             user = form.get_user()
             auth_login(request, user)
             request.session['auth-method'] = "uniauth"
-            return _login_success(user, next_url)
+            return _login_success(request, user, next_url)
 
         # Authentication failed: render form errors
         else:
@@ -165,7 +175,7 @@ def cas_login(request, institution):
 
     # If the user is already authenticated, proceed to next page
     if request.user.is_authenticated:
-        return _login_success(request.user, next_url)
+        return _login_success(request, request.user, next_url)
 
     service_url = get_service_url(request, next_url)
     client = CASClient(version=2, service_url=service_url,
@@ -182,7 +192,7 @@ def cas_login(request, institution):
                 request.session.create()
             auth_login(request, user)
             request.session['auth-method'] = "cas-" + institution.slug
-            return _login_success(user, next_url)
+            return _login_success(request, user, next_url)
 
         # Authentication failed: raise permission denied
         else:
@@ -229,7 +239,7 @@ def logout(request):
     # If we need to logout an institution's CAS,
     # redirect to that CAS server's logout URL
     if institution and get_setting('UNIAUTH_LOGOUT_CAS_COMPLETELY'):
-        redirect_url = urllib_parse.urlunparse(
+        redirect_url = urlunparse(
                 (get_protocol(request), request.get_host(),
                     next_page or reverse('uniauth:logout'), '', '', '')
         )
@@ -347,7 +357,7 @@ def settings(request):
     # if the user is logged in with an unlinked InsitutionAccount,
     # redirect them to the link page
     if is_unlinked_account(request.user):
-        params = urllib_parse.urlencode({'next': reverse('uniauth:settings')})
+        params = urlencode({'next': reverse('uniauth:settings')})
         return HttpResponseRedirect(reverse('uniauth:link-to-profile') + \
                 '?' + params)
 
@@ -472,7 +482,7 @@ def link_to_profile(request):
     if not next_url:
         next_url = get_redirect_url(request)
 
-    params = urllib_parse.urlencode({'next': next_url})
+    params = urlencode({'next': next_url})
     context['next_url'] = next_url
 
     # If the user is not authenticated at all, redirect to login page
