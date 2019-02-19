@@ -11,8 +11,8 @@ The app was designed to replace key features of the built-in `django.contrib.aut
 
 ## Features
 
- - Supports Python 3.5+
- - Supports Django 2.x
+ - Supports Python 2.7, 3.5+
+ - Supports Django 1.11, 2.x
  - Supports using a [custom User model](https://docs.djangoproject.com/en/2.1/topics/auth/customizing/#specifying-a-custom-user-model)
  - Supports using email addresses as the ["username" field](https://docs.djangoproject.com/en/2.1/topics/auth/customizing/#django.contrib.auth.models.CustomUser.USERNAME_FIELD)
  - Users can link multiple email addresses and use any for authentication
