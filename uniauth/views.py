@@ -13,8 +13,6 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
-from django.utils.encoding import force_bytes, force_text
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 from uniauth.decorators import login_required
@@ -24,9 +22,10 @@ from uniauth.forms import AddLinkedEmailForm, ChangePrimaryEmailForm, \
 from uniauth.merge import merge_model_instances
 from uniauth.models import Institution, InstitutionAccount, LinkedEmail
 from uniauth.tokens import token_generator
-from uniauth.utils import choose_username, get_account_username_split, \
-        get_protocol, get_random_username, get_redirect_url, get_service_url, \
-        get_setting, is_tmp_user, is_unlinked_account
+from uniauth.utils import choose_username, decode_pk, encode_pk, \
+        get_account_username_split, get_protocol, get_random_username, \
+        get_redirect_url, get_service_url, get_setting, is_tmp_user, \
+        is_unlinked_account
 try:
     from urllib import urlencode
     from urlparse import urlunparse
@@ -270,7 +269,7 @@ def _send_verification_email(request, to_email, verify_email):
     message = render_to_string('uniauth/verification-email.html', {
         'protocol': get_protocol(request),
         'domain': get_current_site(request),
-        'pk': urlsafe_base64_encode(force_bytes(verify_email.pk)).decode(),
+        'pk': encode_pk(verify_email.pk),
         'token': token_generator.make_token(verify_email),
         'query_params': _get_global_context(request)["query_params"],
     })
@@ -596,7 +595,7 @@ def verify_token(request, pk_base64, token):
 
     # Attempt to get the linked email to verify
     try:
-        email_pk = force_text(urlsafe_base64_decode(pk_base64))
+        email_pk = decode_pk(pk_base64)
         email = LinkedEmail.objects.get(pk=email_pk)
     except (TypeError, ValueError, OverflowError, user_model.DoesNotExist,
             LinkedEmail.DoesNotExist):

@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model, REDIRECT_FIELD_NAME
 from django.shortcuts import resolve_url
 from django.utils import timezone
 from django.utils.crypto import get_random_string
+from django.utils.encoding import force_bytes, force_text
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 try:
     from urllib import urlencode
     from urlparse import urlunparse
@@ -41,6 +43,27 @@ def choose_username(email):
     while user_model.objects.filter(username=email+get_suffix(num)).exists():
         num += 1
     return email + get_suffix(num)
+
+
+def decode_pk(encoded_pk):
+    """
+    Decodes the provided base64 encoded pk into its
+    original value, as a string
+    """
+    return force_text(urlsafe_base64_decode(encoded_pk))
+
+
+def encode_pk(pk):
+    """
+    Returns the base64 encoding of the provided pk
+    """
+    encoded = urlsafe_base64_encode(force_bytes(pk))
+    # On Django <2.1, this method returns a byte string
+    try:
+        encoded = encoded.decode()
+    except AttributeError:
+        pass
+    return encoded
 
 
 def get_account_username_split(username):

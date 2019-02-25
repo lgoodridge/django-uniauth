@@ -1,9 +1,10 @@
 from django.contrib.auth.models import AnonymousUser, User
 from django.test import override_settings, RequestFactory, TestCase
+from random import randint
 from tests.utils import assert_urls_equivalent, pretty_str
-from uniauth.utils import choose_username, get_account_username_split, \
-        get_random_username, get_redirect_url, get_service_url, get_setting, \
-        is_tmp_user, DEFAULT_SETTING_VALUES
+from uniauth.utils import choose_username, decode_pk, encode_pk, \
+        get_account_username_split, get_random_username, get_redirect_url, \
+        get_service_url, get_setting, is_tmp_user, DEFAULT_SETTING_VALUES
 
 
 class ChooseUsernameTests(TestCase):
@@ -34,6 +35,26 @@ class ChooseUsernameTests(TestCase):
             zip_str = pretty_str([x+": "+y for x,y in zip(emails, usernames)])
             self.fail("choose_username outputted a duplicate username.\n"
                     "Emails vs Usernames: %s" % zip_str)
+
+
+class EncodeDecodePkTests(TestCase):
+    """
+    Tests the encode_pk and decode_pk methods in utils.py
+    """
+
+    def test_encode_decode_pk_reversible(self):
+        """
+        Ensure that encoding a PK, then decoding it returns
+        the original value
+        """
+        for i in range(50):
+            random_pk = randint(1, 10000)
+            encoded = encode_pk(random_pk)
+            decoded = decode_pk(encoded)
+            if str(random_pk) != decoded:
+                self.fail(("Encoding then decoding PK '%d' did not return "
+                        "original value.\nEncoded: %s\tDecoded: %s") % \
+                        (random_pk, encoded, decoded))
 
 
 class GetAccountUsernameSplitTests(TestCase):
