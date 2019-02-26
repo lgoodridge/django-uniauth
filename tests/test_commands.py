@@ -1,7 +1,9 @@
+from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import override_settings, TestCase
-from uniauth.models import Institution
+from uniauth.models import LinkedEmail, Institution, InstitutionAccount, \
+        UserProfile
 import os
 import sys
 try:
@@ -54,6 +56,94 @@ class AddInstitutionCommandTests(TestCase):
         call_command("add_institution", "Test", "https://www.example.com")
         self.assertRaisesRegex(CommandError, "exists", call_command,
                 "add_institution", "test", "https://www.foo.bar")
+
+
+class MigrateCASCommandTests(TestCase):
+    """
+    Tests the migrate_cas management command
+    """
+
+    def setUp(self):
+        User.objects.all().delete()
+        self.ex = User.objects.create(username="exid123")
+        self.john = User.objects.create(username="johndoe")
+        self.mary = User.objects.create(username="marysue")
+        self.adam = User.objects.create(username="adam998")
+        UserProfile.objects.all().delete()
+        UserProfile.objects.create(user=self.adam)
+        Institution.objects.create(name="Example Inst", slug="example-inst",
+                cas_server_url="https://fake.example.edu")
+
+    @mock.patch("uniauth.management.commands.migrate_cas.get_input")
+    def test_migrate_cas_command_correct(self, mock_get_input):
+        """
+        Ensures command works as expected given valid starting conditions
+        """
+        # Ensure command fails gracefully with invalid arguments
+        self.assertRaisesRegex(CommandError, "argument", call_command,
+                "migrate_cas")
+        self.assertRaisesRegex(CommandError, "slug", call_command,
+                "migrate_cas", "dne")
+        # Ensure nothing happens when the user does not agree to continue
+        mock_get_input.return_value = "no"
+        call_command("migrate_cas", "example-inst")
+        self.assertEqual(UserProfile.objects.count(), 1)
+        mock_get_input.return_value = "abcde"
+        call_command("migrate_cas", "example-inst")
+        self.assertEqual(UserProfile.objects.count(), 1)
+        # Ensure migration occurs when user does agree to continue
+        mock_get_input.return_value = "yes"
+        call_command("migrate_cas", "example-inst")
+        self.assertEqual(UserProfile.objects.count(), 4)
+        actual_usernames = User.objects.values_list("username", flat=True)
+        expected_usernames = ["adam998", "cas-example-inst-exid123",
+                "cas-example-inst-johndoe", "cas-example-inst-marysue"]
+        self.assertEqual(sorted(actual_usernames), expected_usernames)
+        self.assertEqual(InstitutionAccount.objects.count(), 3)
+        self.assertTrue(InstitutionAccount.objects.filter(cas_id="johndoe",
+                institution__slug="example-inst").exists())
+
+
+class MigrateCustomCommandTests(TestCase):
+    """
+    Tests the migrate_custom management command
+    """
+
+    def setUp(self):
+        User.objects.all().delete()
+        self.ex = User.objects.create(username="exid123")
+        self.john = User.objects.create(username="johndoe",
+                password="johnpass")
+        self.mary = User.objects.create(username="marysue",
+                email="mary.sue@gmail.com", password="marypass")
+        self.adam = User.objects.create(username="adam998@example.com",
+                email="adam998@example.com", password="adampass")
+        UserProfile.objects.all().delete()
+        UserProfile.objects.create(user=self.adam)
+        LinkedEmail.objects.all().delete()
+
+    @mock.patch("uniauth.management.commands.migrate_custom.get_input")
+    def test_migrate_custom_command_correct(self, mock_get_input):
+        """
+        Ensures command works as expected given valid starting conditions
+        """
+        # Ensure nothing happens when the user does not agree to continue
+        mock_get_input.return_value = "no"
+        call_command("migrate_custom")
+        self.assertEqual(UserProfile.objects.count(), 1)
+        mock_get_input.return_value = "abcde"
+        call_command("migrate_custom")
+        self.assertEqual(UserProfile.objects.count(), 1)
+        # Ensure migration occurs when user does agree to continue
+        mock_get_input.return_value = "yes"
+        call_command("migrate_custom")
+        self.assertEqual(UserProfile.objects.count(), 3)
+        self.assertTrue(UserProfile.objects.filter(user__username="johndoe")\
+                .exists())
+        self.assertEqual(LinkedEmail.objects.count(), 1)
+        self.assertTrue(LinkedEmail.objects.filter(address="mary.sue@gmail.com",
+                profile__user__username="marysue").exists())
+        self.assertEqual(self.john.profile.linked_emails.count(), 0)
 
 
 class RemoveInsitutionCommandTests(TestCase):
