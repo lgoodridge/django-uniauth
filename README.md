@@ -5,9 +5,13 @@
 [![djangover][djangover-image]][djangover-url]
 [![pypi][pypi-image]][pypi-url]
 
-`django-uniauth` is an app for allowing authentication through services commonly used by universities, such as [CAS](https://www.apereo.org/projects/cas), while also permitting custom authentication schemes. This approach allows developers to leverage the user data contained within university databases, without strictly tethering themselves to those services.
+`django-uniauth` is an app for allowing authentication through services commonly used by universities, such as [CAS](https://www.apereo.org/projects/cas), while also permitting custom authentication schemes. This approach allows developers to leverage the user data contained within university databases, without strictly tethering themselves to those services. It also allows educational software to have a drop-in authentication solution utilizing the single-sign-on mechanisms of universities, typically CAS, to avoid requiring students to create an additional username or password.
 
 The app was designed to replace key features of the built-in `django.contrib.auth` package. Developers may simply replace the appropriate backends and URLs and let UniAuth handle authentication entirely if they wish. However, the app is also fully customizable, and components may be swapped with compatible replacements if desired.
+
+<p align="center">
+  <img src="https://s3.amazonaws.com/uniauth/documentation/Login+Page.png" />
+</p>
 
 ## Features
 
@@ -17,6 +21,22 @@ The app was designed to replace key features of the built-in `django.contrib.aut
  - Supports using email addresses as the ["username" field](https://docs.djangoproject.com/en/2.1/topics/auth/customizing/#django.contrib.auth.models.CustomUser.USERNAME_FIELD)
  - Users can link multiple email addresses and use any for authentication
  - Supports CAS authentication and Single Sign On
+ - Multiple CAS servers can be configured and users may use any for authentication
+
+## Table of Contents
+
+ - [Installation](https://github.com/lgoodridge/django-uniauth#installation)
+ - [Email Setup](https://github.com/lgoodridge/django-uniauth#email-setup)
+ - [Settings](https://github.com/lgoodridge/django-uniauth#settings)
+ - [Users in Uniauth](https://github.com/lgoodridge/django-uniauth#users-in-uniauth)
+ - [Backends](https://github.com/lgoodridge/django-uniauth#backends)
+ - [Commands](https://github.com/lgoodridge/django-uniauth#commands)
+ - [Views](https://github.com/lgoodridge/django-uniauth#views)
+ - [Template Customization](https://github.com/lgoodridge/django-uniauth#template-customization)
+ - [URL Parameters](https://github.com/lgoodridge/django-uniauth#url-parameters)
+ - [User Migration](https://github.com/lgoodridge/django-uniauth#user-migration)
+ - [Usage Notes](https://github.com/lgoodridge/django-uniauth#usage-notes)
+ - [Acknowledgements](https://github.com/lgoodridge/django-uniauth#acknowledgements)
 
 ## Installation
 
@@ -89,7 +109,7 @@ To use UniAuth as intended, either the `LinkedEmailBackend` or the `UsernameOrLi
 
 ### CASBackend:
 
-The `CASBackend` is inspired from the [`django-cas-ng backend`](https://github.com/mingchen/django-cas-ng/blob/master/django_cas_ng/backends.py) of the same name, and is largely a simplified version of that class. This backend's `authenticate` method accepts an `institution`, a `ticket`, and a `service` URL to redirect to on successful authentication, and attempts to verify that ticket with the institution's CAS server.
+The `CASBackend` is inspired from the [`django-cas-ng backend`](https://github.com/mingchen/django-cas-ng/blob/master/django_cas_ng/backends.py) of the same name, and is largely a streamlined version of that class, modified to support multiple CAS servers. This backend's `authenticate` method accepts an `institution`, a `ticket`, and a `service` URL to redirect to on successful authentication, and attempts to verify that ticket with the institution's CAS server.
 
 If verification succeeds, it looks for an `InstitutionAccount` matching that CAS username, and returns the user for the associated profile. If it succeeds, but there is no such `InstitutionAccount`, a temporary user is created, and the client will eventually be prompted to link this username to an existing UniAuth profile, or create one. If verification fails, authentication fails as well.
 
@@ -109,6 +129,8 @@ UniAuth provides the following managment commands:
 
  - `add_institution <name> <cas_server_url>` Adds an `Institution` with the provided name and CAS server URL to the database.
  - `remove_institution <slug>` Removes the `Institution` with the provided slug from the database. This action removes any `InstitutionAccounts` for that instiutiton in the process.
+ - `migrate_cas <slug>` Migrates a project originally using CAS for authentication to using UniAuth. See the [User Migration](https://github.com/lgoodridge/django-uniauth#user-migration) section for more information.
+ - `migrate_custom` Migrates a project originally using custom User authentication to using UniAuth. See the [User Migration](https://github.com/lgoodridge/django-uniauth#user-migration) section for more information.
 
 ## Views
 
@@ -163,13 +185,24 @@ All views except `/settings/` persist URL parameters to their final destination.
 
 The only URL parameter that is not preserved is the `next` variable, which indicates the desired location to redirect to after business in the current view is completed. This variable is consumed upon successful redirection to that location, and can be used to dynamically control how the app behaves after visiting a view.
 
-## Usage Notes
+## User Migration
 
-This app should not be added to a project that already has registered users, because those users will not have the required UniAuth profile attached them, and therefore will not be valid.
+If you wish to use UniAuth with a project that already has users, a `UserProfile` (and, if applicable, `LinkedEmail` or `InstitutionAccount`) will need to be created for each existing user. You may use one of the provided commands to assist with this, provided your project meets one of the following conditions:
+
+ - If you were previously using CAS for authentication, and the username for each user matches the CAS ID (as would be the case if you were using a package like [django-cas-ng](https://github.com/mingchen/django-cas-ng)), you should first [add an Institution](https://github.com/lgoodridge/django-uniauth#commands) for the CAS server you were using, then use the `migrate_cas` command with the slug of the created Institution to peform the migration. A `UserProfile` and `InstitutionAccount` will be created for all users.
+ - If you were previously using custom user authentication (as in, Users would sign up with a username / email address and password), you may use the `migrate_custom` command to migrate the users. A `UserProfile` will be created for each migrated user, and a verified `LinkedEmail` will also be created for all users with a non-blank `email` field. Note that any users lacking a username / email or password will not be migrated. Also note that if the `LinkedEmailBackend` is used, users that don't have a `LinkedEmail` created will not be able to log in until one is linked.
+
+If your project does not fit either of these conditions, you will need to manually migrate the users as appropiate. Please create a `UserProfile` for each user, and `LinkedEmails` or `InstitutionAccounts` as appropiate.
+
+## Usage Notes
 
 This app provides only the Princeton institution by default as an example. Additional institutions should be configured post-installation as necessary, using the `add_institution` and `remove_institution` commands.
 
 The source repository contains a `demo_app` directory which demonstrates how to setup a simple Django app to use UniAuth. This app has no functionality, and exists solely to show off the installable `uniauth` app. A quick-start guide for integrating UniAuth can be found [here](https://github.com/lgoodridge/UniAuth/tree/master/demo_app).
+
+## Acknowledgements
+
+Special thank you to [Jérémie Lumbroso](https://github.com/jlumbroso) for his guidance in developing this package.
 
 [djangover-image]: https://img.shields.io/pypi/djversions/django-uniauth.svg?label=django
 [djangover-url]: https://pypi.python.org/pypi/django-uniauth/
