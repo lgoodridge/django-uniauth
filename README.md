@@ -207,8 +207,8 @@ Special thank you to [Jérémie Lumbroso](https://github.com/jlumbroso) for his 
 [djangover-image]: https://img.shields.io/pypi/djversions/django-uniauth.svg?label=django
 [djangover-url]: https://pypi.python.org/pypi/django-uniauth/
 
-[license-image]: https://img.shields.io/github/license/lgoodridge/Uniauth.svg
-[license-url]: https://github.com/lgoodridge/UniAuth/blob/master/LICENSE.md
+[license-image]: https://img.shields.io/github/license/lgoodridge/django-uniauth.svg
+[license-url]: https://github.com/lgoodridge/django-uniauth/blob/master/LICENSE.md
 
 [pypi-image]: https://img.shields.io/pypi/v/django-uniauth.svg
 [pypi-url]: https://pypi.python.org/pypi/django-uniauth/
@@ -219,5 +219,5 @@ Special thank you to [Jérémie Lumbroso](https://github.com/jlumbroso) for his 
 [status-image]: https://img.shields.io/pypi/status/django-uniauth.svg
 [status-url]: https://pypi.python.org/pypi/django-uniauth/
 
-[travis-image]: https://img.shields.io/travis/lgoodridge/UniAuth.svg?style=flat
-[travis-url]: https://travis-ci.com/lgoodridge/UniAuth
+[travis-image]: https://img.shields.io/travis/lgoodridge/django-uniauth.svg?style=flat
+[travis-url]: https://travis-ci.com/lgoodridge/django-uniauth
