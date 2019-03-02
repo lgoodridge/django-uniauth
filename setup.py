@@ -5,7 +5,7 @@ with open("README.md", "r") as readme:
 
 setuptools.setup(
     name="django-uniauth",
-    version="0.4.2",
+    version="1.0.0",
     author="Lance Goodridge",
     author_email="ldgoodridge95@gmail.com",
     keywords=["django", "auth", "authentication", "cas", "sso", "single sign-on"],
@@ -13,8 +13,8 @@ setuptools.setup(
     include_package_data=True,
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/lgoodridge/UniAuth",
-    license='MIT',
+    url="https://github.com/lgoodridge/django-uniauth",
+    license='LGPLv3',
     python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
     install_requires=[
         "Django>=1.11",
@@ -31,7 +31,7 @@ setuptools.setup(
         "Framework :: Django :: 2.0",
         "Framework :: Django :: 2.1",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
         "Natural Language :: English",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
