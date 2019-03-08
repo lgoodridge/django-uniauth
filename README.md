@@ -33,7 +33,7 @@ The app was designed to replace key features of the built-in `django.contrib.aut
  - [Commands](https://github.com/lgoodridge/django-uniauth#commands)
  - [Views](https://github.com/lgoodridge/django-uniauth#views)
  - [Template Customization](https://github.com/lgoodridge/django-uniauth#template-customization)
- - [URL Parameters](https://github.com/lgoodridge/django-uniauth#url-parameters)
+ - [URLs](https://github.com/lgoodridge/django-uniauth#urls)
  - [User Migration](https://github.com/lgoodridge/django-uniauth#user-migration)
  - [Usage Notes](https://github.com/lgoodridge/django-uniauth#usage-notes)
  - [Acknowledgements](https://github.com/lgoodridge/django-uniauth#acknowledgements)
@@ -60,7 +60,7 @@ Add the desired Uniauth authentication backends. For example:
 
 Lastly, include the `uniauth` URLS in your `urls.py`:
 
-    URL_PATTERNS = [
+    urlpatterns = [
         ...
         path('accounts/', include('uniauth.urls', namespace='uniauth')),
     ]
@@ -91,7 +91,7 @@ The following custom settings are also used:
  - `UNIAUTH_LOGOUT_REDIRECT_URL`: Where to redirect the user after logging out, if no next URL is provided. If this setting is `None`, and a next URL is not provided, the logout template is rendered instead. Defaults to `None`.
  - `UNIAUTH_LOGOUT_CAS_COMPLETELY`: Whether to log the user out of CAS on logout if the user originally logged in via CAS. Defaults to `False`.
  - `UNIAUTH_MAX_LINKED_EMAILS`: The maximum number of emails a user can link to their profile. If this value is less than or equal to 0, there is no limit to the number of linked emails. Defaults to 20.
- - `UNIAUTH_PERFORM_RECURSIVE_MERGING`: Whether to attempt to recursively merge One-to-One fields when merging users due to linking two existing accounts together. If `False`, One-to-One fields for the user being linked in will be deleted if the primary user has a non-null value for that field.
+ - `UNIAUTH_PERFORM_RECURSIVE_MERGING`: Whether to attempt to recursively merge One-to-One fields when merging users due to linking two existing accounts together. If `False`, One-to-One fields for the user being linked in will be deleted if the primary user has a non-null value for that field. Defaults to `True`.
 
 ## Users in UniAuth
 
@@ -179,7 +179,15 @@ The presentation of the views can be easily changed by overriding the appropriat
 
 More specific changes can be made by overriding the appropriate template.
 
-## URL Parameters
+## URLs
+
+To add the UniAuth views to your app, you must add an entry to your `urlpatterns` which includes them with the namespace "uniauth". For example:
+
+    path('accounts/', include('uniauth.urls', namespace='uniauth'))
+
+Including the `uniauth.urls` module will add all of UniAuth's views to your app. However, if you only wish to use CAS authentication, you may choose to include the `uniauth.urls.cas_only` module instead, which will only expose the `login`, `cas-login`, and `logout` views.
+
+### URL Parameters
 
 All views except `/settings/` persist URL parameters to their final destination. This means you can add a query string to the `login` URL, and have it apply to the `UNIAUTH_LOGIN_REDIRECT_URL` page, for example.
 

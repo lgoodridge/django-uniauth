@@ -9,5 +9,5 @@ from . import views
 urlpatterns = [
     url('admin/', admin.site.urls),
     url('accounts/', include('uniauth.urls', namespace='uniauth')),
-    url('', views.index, name='index'),
+    url('^$', views.index, name='index'),
 ]

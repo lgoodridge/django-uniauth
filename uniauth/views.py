@@ -12,6 +12,7 @@ from django.http import Http404, HttpResponseBadRequest, \
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
+from django.urls.exceptions import NoReverseMatch
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
@@ -39,12 +40,21 @@ def _get_global_context(request):
     """
     context = {}
 
+    # Returns the reverse lookup URL of the provided view with
+    # the provided slug argument. Returns None if the view is
+    # not accessible under the current configuration
+    def get_reversed_url_or_none(view_name, slug):
+        try:
+            return reverse('uniauth:%s' % view_name, args=[slug])
+        except NoReverseMatch:
+            return None
+
     # Add a list of Institution tuples, with each containing:
     # (name, slug, CAS login url, Profile link URL)
     institutions = Institution.objects.all()
     institutions = list(map(lambda x: (x.name, x.slug,
-            reverse('uniauth:cas-login', args=[x.slug]),
-            reverse('uniauth:link-from-profile', args=[x.slug])),
+            get_reversed_url_or_none("cas-login", x.slug),
+            get_reversed_url_or_none("link-from-profile", x.slug)),
             institutions))
     context['institutions'] = institutions
 
@@ -56,17 +66,29 @@ def _get_global_context(request):
     return context
 
 
-def _login_success(request, user, next_url):
+def _login_success(request, user, next_url, drop_params=[]):
     """
     Determines where to go upon successful authentication:
     Redirects to link tmp account page if user is a temporary
-    user, redirects to next_url otherwise
+    user, redirects to next_url otherwise.
+
+    Any query parameters whose key exists in drop_params are
+    not propogated to the destination URL
     """
     query_params = request.GET.copy()
+
+    # Drop all blacklisted query parameters
+    for key in drop_params:
+        if key in query_params:
+            del query_params[key]
+
+    # Temporary users should redirect to the link-to-profile page
     if is_tmp_user(user):
         query_params[REDIRECT_FIELD_NAME] = next_url
         return HttpResponseRedirect(reverse('uniauth:link-to-profile') + \
                 '?' + urlencode(query_params))
+
+    # All other users should redirect to next_url
     else:
         suffix = ''
         if REDIRECT_FIELD_NAME in query_params:
@@ -123,8 +145,7 @@ def login(request):
         # If there's only one possible institution to log
         # into, redirect to its CAS login page immediately
         if num_institutions == 1:
-            return HttpResponseRedirect(reverse('uniauth:cas-login',
-                    args=[institutions[0][1]]) + '?' + query_params)
+            return HttpResponseRedirect(institutions[0][2] + query_params)
 
         # Otherwise, render the page (without the Login form)
         else:
@@ -192,7 +213,7 @@ def cas_login(request, institution):
                 request.session.create()
             auth_login(request, user)
             request.session['auth-method'] = "cas-" + institution.slug
-            return _login_success(request, user, next_url)
+            return _login_success(request, user, next_url, ["ticket"])
 
         # Authentication failed: raise permission denied
         else:
