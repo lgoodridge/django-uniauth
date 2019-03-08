@@ -2,8 +2,7 @@ from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import override_settings, TestCase
-from uniauth.models import LinkedEmail, Institution, InstitutionAccount, \
-        UserProfile
+from uniauth.models import LinkedEmail, Institution, UserProfile
 import os
 import sys
 try:
@@ -99,9 +98,6 @@ class MigrateCASCommandTests(TestCase):
         expected_usernames = ["adam998", "cas-example-inst-exid123",
                 "cas-example-inst-johndoe", "cas-example-inst-marysue"]
         self.assertEqual(sorted(actual_usernames), expected_usernames)
-        self.assertEqual(InstitutionAccount.objects.count(), 3)
-        self.assertTrue(InstitutionAccount.objects.filter(cas_id="johndoe",
-                institution__slug="example-inst").exists())
 
 
 class MigrateCustomCommandTests(TestCase):

@@ -29,9 +29,9 @@ class Command(BaseCommand):
             "should only proceed with this command if your project was "
             "previously using CAS for authentication, and the usernames for "
             "all existing Users are equivalent to their CAS ID. This command "
-            "will create UserProfiles and InstitutionAccounts for each user "
-            "with the Institution specified by the slug argument.\n\nDo you "
-            "still wish to continue?\n\nAnswer [y/n]: ")
+            "will create UserProfiles for each user with the Institution "
+            "specified by the slug argument.\n\nDo you still wish to "
+            "continue?\n\nAnswer [y/n]: ")
         answer = get_input(message)
 
         if answer != "y" and answer != "yes":
@@ -47,8 +47,6 @@ class Command(BaseCommand):
             cas_id = user.username
             user.username = "cas-%s-%s" % (slug, cas_id)
             user.save()
-            # Add the profile and institution account
+            # Add the profile
             profile = UserProfile.objects.create(user=user)
-            InstitutionAccount.objects.create(profile=profile,
-                    institution=institution, cas_id=cas_id)
         self.stdout.write("Done!\n")
