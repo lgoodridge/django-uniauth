@@ -85,6 +85,18 @@ class UserProfileModelTests(TestCase):
         with self.assertRaises(IntegrityError):
             UserProfile.objects.create()
 
+    def test_user_profile_get_display_id(self):
+        """
+        Ensure the get_display_id method works properly
+        """
+        user = User.objects.create(username="new-user")
+        self.assertEqual(user.profile.get_display_id(), "new-user")
+        user = User.objects.create(username="cas-example-inst-id123")
+        self.assertEqual(user.profile.get_display_id(), "id123")
+        user = User.objects.create(username="john.doe@example.com",
+                email="otheraddress@example.com")
+        self.assertEqual(user.profile.get_display_id(), "john.doe")
+
 
 class LinkedEmailModelTests(TestCase):
     """

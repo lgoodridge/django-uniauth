@@ -18,6 +18,25 @@ class UserProfile(models.Model):
     user = models.OneToOneField(get_user_model(), related_name='profile',
             on_delete=models.CASCADE, null=False)
 
+    def get_display_id(self):
+        """
+        Returns a display-friendly ID for this User, using their
+        username. Users created via CAS authentication will have
+        their CAS ID returned (without the cas-institution prefix),
+        and Users with an email address for a username will have
+        the string preceeding the "@" returned. All other users
+        will have their raw username returned.
+
+        Note that these IDs are not guaranteed to be unique.
+        """
+        username = self.user.username
+        if "@" in username:
+            return username.split("@")[0]
+        if username.startswith('cas-'):
+            from uniauth.utils import get_account_username_split
+            return get_account_username_split(username)[-1]
+        return username
+
     def __str__(self):
         try:
             return self.user.email or self.user.username
@@ -107,8 +126,8 @@ class LinkedEmail(models.Model):
 
 class Institution(models.Model):
     """
-    Represents an organization holding a
-    CAS server that can be logged into.
+    Represents an organization holding a CAS server
+    that can be logged into.
     """
 
     # Name of the institution

@@ -7,7 +7,7 @@
 
 `django-uniauth` is an app for allowing authentication through services commonly used by universities, such as [CAS](https://www.apereo.org/projects/cas), while also permitting custom authentication schemes. This approach allows developers to leverage the user data contained within university databases, without strictly tethering themselves to those services. It also allows educational software to have a drop-in authentication solution utilizing the single-sign-on mechanisms of universities, typically CAS, to avoid requiring students to create an additional username or password.
 
-The app was designed to replace key features of the built-in `django.contrib.auth` package. Developers may simply replace the appropriate backends and URLs and let UniAuth handle authentication entirely if they wish. However, the app is also fully customizable, and components may be swapped with compatible replacements if desired.
+The app was designed to replace key features of the built-in `django.contrib.auth` package. Developers may simply replace the appropriate backends and URLs and let Uniauth handle authentication entirely if they wish. However, the app is also fully customizable, and components may be swapped with compatible replacements if desired.
 
 <p align="center">
   <img src="https://s3.amazonaws.com/uniauth/documentation/Login+Page.png" />
@@ -29,6 +29,7 @@ The app was designed to replace key features of the built-in `django.contrib.aut
  - [Email Setup](https://github.com/lgoodridge/django-uniauth#email-setup)
  - [Settings](https://github.com/lgoodridge/django-uniauth#settings)
  - [Users in Uniauth](https://github.com/lgoodridge/django-uniauth#users-in-uniauth)
+ - [Models](https://github.com/lgoodridge/django-uniauth#models)
  - [Backends](https://github.com/lgoodridge/django-uniauth#backends)
  - [Commands](https://github.com/lgoodridge/django-uniauth#commands)
  - [Views](https://github.com/lgoodridge/django-uniauth#views)
@@ -84,7 +85,7 @@ The following custom settings are also used:
 
  - `UNIAUTH_ALLOW_SHARED_EMAILS`: Whether to allow a single email address to be linked to multiple profiles. Primary email addresses (the value set in the user's `email` field) must be unique regardless. Defaults to `True`.
  - `UNIAUTH_ALLOW_STANDALONE_ACCOUNTS`: Whether to allow users to log in via an Institution Account (such as via CAS) without linking it to a Uniauth profile first. If set to `False`, users will be required to create or link a profile to their Institution Accounts before being able to access views protected by the `@login_required` decorator. Defaults to `True`.
- - `UNIAUTH_FROM_EMAIL`: Determines the "from" email address when UniAuth sends an email, such as for email verification or password resets. Defaults to `uniauth@example.com`.
+ - `UNIAUTH_FROM_EMAIL`: Determines the "from" email address when Uniauth sends an email, such as for email verification or password resets. Defaults to `uniauth@example.com`.
  - `UNIAUTH_LOGIN_DISPLAY_STANDARD`: Whether the email address / password form is shown on the `login` view. If `False`, the form, "Create an Account" link, and "Forgot Password" link are hidden, and POST requests for the view will be ignored. Defaults to `True`.
  - `UNIAUTH_LOGIN_DISPLAY_CAS`: Whether the option to sign in via CAS is shown on the `login` view. If `True`, there must be at least one `Institution` in the database to log into. Also, at least one of `UNIAUTH_LOGIN_DISPLAY_STANDARD` or `UNIAUTH_LOGIN_DISPLAY_CAS` must be `True`. Violating either of these constraints will result in an `ImproperlyConfigured` Exception. Defaults to `True`.
  - `UNIAUTH_LOGIN_REDIRECT_URL`: Where to redirect the user after logging in, if no next URL is provided. Defaults to `/`.
@@ -93,25 +94,35 @@ The following custom settings are also used:
  - `UNIAUTH_MAX_LINKED_EMAILS`: The maximum number of emails a user can link to their profile. If this value is less than or equal to 0, there is no limit to the number of linked emails. Defaults to 20.
  - `UNIAUTH_PERFORM_RECURSIVE_MERGING`: Whether to attempt to recursively merge One-to-One fields when merging users due to linking two existing accounts together. If `False`, One-to-One fields for the user being linked in will be deleted if the primary user has a non-null value for that field. Defaults to `True`.
 
-## Users in UniAuth
+## Users in Uniauth
 
-UniAuth supports any custom User model, so long as the model has `username` and `email` fields. The `email` serves as the primary identifying field within UniAuth, with the `username` being set to an arbitrary unique value to support packages that require it. Once a user's profile has been activated, other apps are free to change the `username` without disrupting UniAuth's behavior.
+Uniauth supports any custom User model, so long as the model has `username` and `email` fields. The `email` serves as the primary identifying field within Uniauth, with the `username` being set to an arbitrary unique value to support packages that require it. Once a user's profile has been activated, other apps are free to change the `username` without disrupting Uniauth's behavior.
 
 Users are created by either completing the Sign Up form, or logging in via an `InstitutionAccount`. In the former case, they are given a username beginning with `tmp-`, followed by a unique suffix, and an empty `email` field. When the first email for a user has been verified, their profile is considered fully activated, the `email` field is set to the verified email, and the `username` field is arbitrarily set to that email address as well, unless it is taken. In the latter case, they are given a username describing how they were authenticated, along with the institution they signed into and their ID for that institution. They will keep this username and have an empty `email` field until they link their account to a verified Uniauth profile.
 
-Users may have multiple email addresses linked to their profile, any of which may be used for authentication (if one of the `LinkedEmail` [UniAuth backends](https://github.com/lgoodridge/UniAuth#backends) are used), or for password reset. The address set in the user's `email` field is considered the "primary email", and is the only one that must be unique across all users. Users may change which linked email is their primary email address at any point via the `settings` page, so long as that primary email is not taken by another user.
+Users may have multiple email addresses linked to their profile, any of which may be used for authentication (if one of the `LinkedEmail` [Uniauth backends](https://github.com/lgoodridge/django-uniauth#backends) are used), or for password reset. The address set in the user's `email` field is considered the "primary email", and is the only one that must be unique across all users. Users may change which linked email is their primary email address at any point via the `settings` page, so long as that primary email is not taken by another user.
 
-Users may also have multiple `InstitutionAccounts` linked to their profile. These represent alternative ways of logging in, other than the standard username/email + password form. For example, if a University offers authentication via CAS, a user may link their CAS username for that university to their UniAuth profile, so that logging with CAS authenticates them as the proper user. All `InstitutionAccounts` must be linked to a profile in order to be used for authentication.
+Users may also have multiple `InstitutionAccounts` linked to their profile. These represent alternative ways of logging in, other than the standard username/email + password form. For example, if a University offers authentication via CAS, a user may link their CAS username for that university to their Uniauth profile, so that logging with CAS authenticates them as the proper user. All `InstitutionAccounts` must be linked to a profile in order to be used for authentication.
+
+## Models
+
+Uniauth has the following models:
+
+ - `UserProfile`: This model is automatically attached to each User upon creation, and extends the User model with the extra data Uniauth requires. The other Uniauth models all interact with the `UserProfile` model rather than the User model directly. Accessible via `user.profile`.
+    - `get_display_id`: This method returns a more display-friendly ID for the user, using their username. If the User was created via CAS authentication, it will return their username without the institution prefix (so a User with username "cas-exampleinst-id123" would return "id123"). If their username is an email address, it will return everything before the "@" symbol (so "johndoe@example.com" would become "johndoe"). Otherwise the username is returned unmodified. These generated IDs are not guaranteed to be unique.
+ - `LinkedEmail`: Represents an email address linked to a User's account. Accessible via `user.profile.linked_emails`.
+ - `Institution`: Represents an organization possesing an authentication server that can be logged into. You will need to add an Institution for each CAS server you wish to support. The `add_institution` and `remove_institution` commands are provided to help with this.
+ - `InstitutionAccount`: Represents an account a User holds with a particular Institution. Accessible via `user.profile.accounts`.
 
 ## Backends
 
-To use UniAuth as intended, either the `LinkedEmailBackend` or the `UsernameOrLinkedEmailBackend` should be included in your `AUTHENTICATION_BACKENDS` setting, along with the backends for any other authentication methods you wish to support.
+To use Uniauth as intended, either the `LinkedEmailBackend` or the `UsernameOrLinkedEmailBackend` should be included in your `AUTHENTICATION_BACKENDS` setting, along with the backends for any other authentication methods you wish to support.
 
 ### CASBackend:
 
 The `CASBackend` is inspired from the [`django-cas-ng backend`](https://github.com/mingchen/django-cas-ng/blob/master/django_cas_ng/backends.py) of the same name, and is largely a streamlined version of that class, modified to support multiple CAS servers. This backend's `authenticate` method accepts an `institution`, a `ticket`, and a `service` URL to redirect to on successful authentication, and attempts to verify that ticket with the institution's CAS server.
 
-If verification succeeds, it looks for an `InstitutionAccount` matching that CAS username, and returns the user for the associated profile. If it succeeds, but there is no such `InstitutionAccount`, a temporary user is created, and the client will eventually be prompted to link this username to an existing UniAuth profile, or create one. If verification fails, authentication fails as well.
+If verification succeeds, it looks for an `InstitutionAccount` matching that CAS username, and returns the user for the associated profile. If it succeeds, but there is no such `InstitutionAccount`, a temporary user is created, and the client will eventually be prompted to link this username to an existing Uniauth profile, or create one. If verification fails, authentication fails as well.
 
 ### LinkedEmailBackend:
 
@@ -125,12 +136,12 @@ Identical to the above class, except the provided `email` argument is also check
 
 ## Commands
 
-UniAuth provides the following managment commands:
+Uniauth provides the following managment commands:
 
- - `add_institution <name> <cas_server_url>` Adds an `Institution` with the provided name and CAS server URL to the database.
- - `remove_institution <slug>` Removes the `Institution` with the provided slug from the database. This action removes any `InstitutionAccounts` for that instiutiton in the process.
- - `migrate_cas <slug>` Migrates a project originally using CAS for authentication to using UniAuth. See the [User Migration](https://github.com/lgoodridge/django-uniauth#user-migration) section for more information.
- - `migrate_custom` Migrates a project originally using custom User authentication to using UniAuth. See the [User Migration](https://github.com/lgoodridge/django-uniauth#user-migration) section for more information.
+ - `add_institution <name> <cas_server_url>`: Adds an `Institution` with the provided name and CAS server URL to the database.
+ - `remove_institution <slug>`: Removes the `Institution` with the provided slug from the database. This action removes any `InstitutionAccounts` for that instiutiton in the process.
+ - `migrate_cas <slug>`: Migrates a project originally using CAS for authentication to using Uniauth. See the [User Migration](https://github.com/lgoodridge/django-uniauth#user-migration) section for more information.
+ - `migrate_custom`: Migrates a project originally using custom User authentication to using Uniauth. See the [User Migration](https://github.com/lgoodridge/django-uniauth#user-migration) section for more information.
 
 ## Views
 
@@ -142,19 +153,19 @@ The five views you will likely care about the most are `login`, `logout`, `signu
  - `/password-reset/`: Prompts user for an email address, then sends an email to that address containing a link for resetting the password. If no users have the entered email address linked to their account, no email is sent. If multiple users have that address linked, an email is sent for each potential user.
  - `/settings/`: Allows users to perform account related actions, such as link more email addresses, choose the primary email address, link more Institution Accounts, or change their password.
 
-The remaining views are used internally by UniAuth, and should not be linked to from outside the app:
+The remaining views are used internally by Uniauth, and should not be linked to from outside the app:
 
  - `/cas-login/`: If a user chooses to log in via CAS, this view is called with the institution the user wishes to log into as an argument. The view will first redirect to the institution's CAS server and attempt to get a ticket, then return to the original page and attempt to authenticate with that ticket, via the `CASBackend`.
- - `/link-to-account/`: If the user is logged into an `InstitutionAccount` not yet linked to a UniAuth profile, this view offers them the choice between linking it to an existing profile, or creating a new one, and linking it to that upon activation.
- - `/link-from-account/`: If the user is logged into an activated UniAuth profile, this view gives them the opportunity to log into an institution via a supported backend, then link that `InstitutionAccount` to the current profile.
+ - `/link-to-account/`: If the user is logged into an `InstitutionAccount` not yet linked to a Uniauth profile, this view offers them the choice between linking it to an existing profile, or creating a new one, and linking it to that upon activation.
+ - `/link-from-account/`: If the user is logged into an activated Uniauth profile, this view gives them the opportunity to log into an institution via a supported backend, then link that `InstitutionAccount` to the current profile.
  - `/verify-token/`: Intermediate page used during the email verification process. Verifies the token contained within the link sent to the email address.
  - `/password-reset-*/`: Intermediate pages used during the password reset process. Are nearly identical to the [built-in password reset views](https://docs.djangoproject.com/en/2.1/topics/auth/default/#django.contrib.auth.views.PasswordResetView) provided by the `django.contrib.auth` package.
 
-UniAuth also implements its own version of the `@login_required` decorator, which ensure the user is logged in with an activated UniAuth profile before accessing the view. It may be used identically to the [built-in `@login_required` decorator](https://docs.djangoproject.com/en/2.1/topics/auth/default/#the-login-required-decorator), and should be added to your own views in place of the default version.
+Uniauth also implements its own version of the `@login_required` decorator, which ensure the user is logged in with an activated Uniauth profile before accessing the view. It may be used identically to the [built-in `@login_required` decorator](https://docs.djangoproject.com/en/2.1/topics/auth/default/#the-login-required-decorator), and should be added to your own views in place of the default version.
 
 ## Template Customization
 
-The presentation of the views can be easily changed by overriding the appropriate template(s). For example, to add your own stylesheet to the UniAuth templates, create a `uniauth` folder in your `templates` directory, and add a `base-site.html` file to override the default one like so:
+The presentation of the views can be easily changed by overriding the appropriate template(s). For example, to add your own stylesheet to the Uniauth templates, create a `uniauth` folder in your `templates` directory, and add a `base-site.html` file to override the default one like so:
 
     {% extends "uniauth/base.html" %}
 
@@ -181,11 +192,11 @@ More specific changes can be made by overriding the appropriate template.
 
 ## URLs
 
-To add the UniAuth views to your app, you must add an entry to your `urlpatterns` which includes them with the namespace "uniauth". For example:
+To add the Uniauth views to your app, you must add an entry to your `urlpatterns` which includes them with the namespace "uniauth". For example:
 
     path('accounts/', include('uniauth.urls', namespace='uniauth'))
 
-Including the `uniauth.urls` module will add all of UniAuth's views to your app. However, if you only wish to use CAS authentication, you may choose to include the `uniauth.urls.cas_only` module instead, which will only expose the `login`, `cas-login`, and `logout` views.
+Including the `uniauth.urls` module will add all of Uniauth's views to your app. However, if you only wish to use CAS authentication, you may choose to include the `uniauth.urls.cas_only` module instead, which will only expose the `login`, `cas-login`, and `logout` views.
 
 ### URL Parameters
 
@@ -195,9 +206,9 @@ The only URL parameter that is not preserved is the `next` variable, which indic
 
 ## User Migration
 
-If you wish to use UniAuth with a project that already has users, a `UserProfile` (and, if applicable, `LinkedEmail` or `InstitutionAccount`) will need to be created for each existing user. You may use one of the provided commands to assist with this, provided your project meets one of the following conditions:
+If you wish to use Uniauth with a project that already has users, a `UserProfile` (and, if applicable, `LinkedEmail` or `InstitutionAccount`) will need to be created for each existing user. You may use one of the provided commands to assist with this, provided your project meets one of the following conditions:
 
- - If you were previously using CAS for authentication, and the username for each user matches the CAS ID (as would be the case if you were using a package like [django-cas-ng](https://github.com/mingchen/django-cas-ng)), you should first [add an Institution](https://github.com/lgoodridge/django-uniauth#commands) for the CAS server you were using, then use the `migrate_cas` command with the slug of the created Institution to peform the migration. A `UserProfile` and `InstitutionAccount` will be created for all users.
+ - If you were previously using CAS for authentication, and the username for each user matches the CAS ID (as would be the case if you were using a package like [django-cas-ng](https://github.com/mingchen/django-cas-ng)), you should first [add an Institution](https://github.com/lgoodridge/django-uniauth#commands) for the CAS server you were using, then use the `migrate_cas` command with the slug of the created Institution to peform the migration. A `UserProfile` and `InstitutionAccount` will be created for all users. The usernames of all Users will also be changed to conform to Uniauth's expectations (to `cas-<institution_slug>-<original_username>`). To get the original username (without the CAS institution prefix), use the `get_display_id` method provided by the `UserProfile` model.
  - If you were previously using custom user authentication (as in, Users would sign up with a username / email address and password), you may use the `migrate_custom` command to migrate the users. A `UserProfile` will be created for each migrated user, and a verified `LinkedEmail` will also be created for all users with a non-blank `email` field. Note that any users lacking a username / email or password will not be migrated. Also note that if the `LinkedEmailBackend` is used, users that don't have a `LinkedEmail` created will not be able to log in until one is linked.
 
 If your project does not fit either of these conditions, you will need to manually migrate the users as appropiate. Please create a `UserProfile` for each user, and `LinkedEmails` or `InstitutionAccounts` as appropiate.
@@ -206,7 +217,7 @@ If your project does not fit either of these conditions, you will need to manual
 
 This app provides only the Princeton institution by default as an example. Additional institutions should be configured post-installation as necessary, using the `add_institution` and `remove_institution` commands.
 
-The source repository contains a `demo_app` directory which demonstrates how to setup a simple Django app to use UniAuth. This app has no functionality, and exists solely to show off the installable `uniauth` app. A quick-start guide for integrating UniAuth can be found [here](https://github.com/lgoodridge/UniAuth/tree/master/demo_app).
+The source repository contains a `demo_app` directory which demonstrates how to setup a simple Django app to use Uniauth. This app has no functionality, and exists solely to show off the installable `uniauth` app. A quick-start guide for integrating Uniauth can be found [here](https://github.com/lgoodridge/django-uniauth/tree/master/demo_app).
 
 ## Acknowledgements
 
