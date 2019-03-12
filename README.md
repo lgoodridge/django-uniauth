@@ -108,11 +108,23 @@ Users may also have multiple `InstitutionAccounts` linked to their profile. Thes
 
 Uniauth has the following models:
 
- - `UserProfile`: This model is automatically attached to each User upon creation, and extends the User model with the extra data Uniauth requires. The other Uniauth models all interact with the `UserProfile` model rather than the User model directly. Accessible via `user.profile`.
-    - `get_display_id`: This method returns a more display-friendly ID for the user, using their username. If the User was created via CAS authentication, it will return their username without the institution prefix (so a User with username "cas-exampleinst-id123" would return "id123"). If their username is an email address, it will return everything before the "@" symbol (so "johndoe@example.com" would become "johndoe"). Otherwise the username is returned unmodified. These generated IDs are not guaranteed to be unique.
- - `LinkedEmail`: Represents an email address linked to a User's account. Accessible via `user.profile.linked_emails`.
- - `Institution`: Represents an organization possesing an authentication server that can be logged into. You will need to add an Institution for each CAS server you wish to support. The `add_institution` and `remove_institution` commands are provided to help with this.
- - `InstitutionAccount`: Represents an account a User holds with a particular Institution. Accessible via `user.profile.accounts`.
+### UserProfile:
+
+This model is automatically attached to each User upon creation, and extends the User model with the extra data Uniauth requires. The other Uniauth models all interact with the `UserProfile` model rather than the User model directly. Accessible via `user.profile`.
+
+ - `get_display_id`: This method returns a more display-friendly ID for the user, using their username. If the User was created via CAS authentication, it will return their username without the institution prefix (so a User with username "cas-exampleinst-id123" would return "id123"). If their username is an email address, it will return everything before the "@" symbol (so "johndoe@example.com" would become "johndoe"). Otherwise the username is returned unmodified. These generated IDs are not guaranteed to be unique.
+
+### LinkedEmail:
+
+Represents an email address linked to a User's account. Accessible via `user.profile.linked_emails`.
+
+### Institution:
+
+Represents an organization possesing an authentication server that can be logged into. You will need to add an Institution for each CAS server you wish to support. The `add_institution` and `remove_institution` commands are provided to help with this.
+
+### InstitutionAccount:
+
+Represents an account a User holds with a particular Institution. Accessible via `user.profile.accounts`.
 
 ## Backends
 
