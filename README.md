@@ -23,6 +23,10 @@ The app was designed to replace key features of the built-in `django.contrib.aut
  - Supports CAS authentication and Single Sign On
  - Multiple CAS servers can be configured and users may use any for authentication
 
+## Tutorials
+
+ - How to add CAS authentication with Uniauth: [link](https://medium.com/@ldgoodridge95/adding-cas-authentication-to-your-django-app-with-django-uniauth-13ff4e1e7bfa)
+
 ## Table of Contents
 
  - [Installation](https://github.com/lgoodridge/django-uniauth#installation)
