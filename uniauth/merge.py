@@ -54,7 +54,9 @@ def merge_model_instances(primary_object, alias_objects, field_trace=[]):
         # object.
         for many_to_many_field in many_to_many_fields:
             alias_varname = many_to_many_field.name
-            related_objects = getattr(alias_object, alias_varname)
+            related_objects = getattr(alias_object, alias_varname, None)
+            if related_objects is None:
+                continue
             for obj in related_objects.all():
                 try:
                     # Handle regular M2M relationships.
@@ -80,15 +82,18 @@ def merge_model_instances(primary_object, alias_objects, field_trace=[]):
         for related_field in related_fields:
             if related_field.one_to_many:
                 alias_varname = related_field.get_accessor_name()
-                related_objects = getattr(alias_object, alias_varname)
+                related_objects = getattr(alias_object, alias_varname, None)
+                if related_objects is None:
+                    continue
                 for obj in related_objects.all():
                     field_name = related_field.field.name
                     setattr(obj, field_name, primary_object)
                     obj.save()
             elif related_field.one_to_one or related_field.many_to_one:
                 alias_varname = related_field.name
-                related_object = getattr(alias_object, alias_varname)
-                primary_related_object = getattr(primary_object, alias_varname)
+                related_object = getattr(alias_object, alias_varname, None)
+                primary_related_object = getattr(primary_object,
+                        alias_varname, None)
                 if primary_related_object is None:
                     setattr(primary_object, alias_varname, related_object)
                     primary_object.save()
