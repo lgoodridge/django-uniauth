@@ -94,11 +94,13 @@ def merge_model_instances(primary_object, alias_objects, field_trace=[]):
                 related_object = getattr(alias_object, alias_varname, None)
                 primary_related_object = getattr(primary_object,
                         alias_varname, None)
-                if primary_related_object is None:
+                if related_object is None:
+                    continue
+                elif primary_related_object is None:
                     setattr(primary_object, alias_varname, related_object)
                     primary_object.save()
                 elif related_field.one_to_one:
-                    # Perform recurisve merging for one-to-one fields
+                    # Perform recursive merging for one-to-one fields
                     if get_setting("UNIAUTH_PERFORM_RECURSIVE_MERGING"):
                         if related_field in field_trace:
                             continue
