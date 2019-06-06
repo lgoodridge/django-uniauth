@@ -4,11 +4,6 @@ from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
 
-def add_institutions(apps, schema_editor):
-    Institution = apps.get_model('uniauth', 'Institution')
-    Institution.objects.create(name='Princeton', slug='princeton',
-            cas_server_url='https://cast.cs.princeton.edu/cas/')
-
 class Migration(migrations.Migration):
 
     initial = True
@@ -60,5 +55,4 @@ class Migration(migrations.Migration):
             name='profile',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='accounts', to='uniauth.UserProfile'),
         ),
-        migrations.RunPython(add_institutions),
     ]
