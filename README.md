@@ -40,7 +40,7 @@ The app was designed to replace key features of the built-in `django.contrib.aut
  - [Template Customization](https://github.com/lgoodridge/django-uniauth#template-customization)
  - [URLs](https://github.com/lgoodridge/django-uniauth#urls)
  - [User Migration](https://github.com/lgoodridge/django-uniauth#user-migration)
- - [Usage Notes](https://github.com/lgoodridge/django-uniauth#usage-notes)
+ - [Demo Application](https://github.com/lgoodridge/django-uniauth#demo-application)
  - [Acknowledgements](https://github.com/lgoodridge/django-uniauth#acknowledgements)
 
 ## Installation
@@ -63,12 +63,18 @@ Add the desired Uniauth authentication backends. For example:
         'uniauth.backends.CASBackend',
     ]
 
-Lastly, include the `uniauth` URLS in your `urls.py`:
+Include the `uniauth` URLS in your `urls.py`:
 
     urlpatterns = [
         ...
         path('accounts/', include('uniauth.urls', namespace='uniauth')),
     ]
+
+Lastly, add your desired institution CAS server(s). For example:
+
+    python manage.py add_institution "Example Institution" https://cas.example.edu/
+
+See the [commands section](https://github.com/lgoodridge/django-uniauth#commands) for more information regarding adding and removing institution CAS servers.
 
 ## Email Setup
 
@@ -152,9 +158,9 @@ Identical to the above class, except the provided `email` argument is also check
 
 ## Commands
 
-Uniauth provides the following managment commands:
+Uniauth provides the following management commands:
 
- - `add_institution <name> <cas_server_url>`: Adds an `Institution` with the provided name and CAS server URL to the database.
+ - `add_institution <name> <cas_server_url>`: Adds an `Institution` with the provided name and CAS server URL to the database. The `name` will be the text displayed in the CAS server dropdown on the Login page, and `cas_server_url` must point to the root URL of a CAS protocol compliant service. For example, to add the Princeton institution CAS server, you would run `python manage.py add_institution Princeton https://fed.princeton.edu/cas/`. The command will return the institution's slug created from the provided name; this slug must be used when referring to the institution in other commands (such as `remove_institution`).
  - `remove_institution <slug>`: Removes the `Institution` with the provided slug from the database. This action removes any `InstitutionAccounts` for that instiutiton in the process.
  - `migrate_cas <slug>`: Migrates a project originally using CAS for authentication to using Uniauth. See the [User Migration](https://github.com/lgoodridge/django-uniauth#user-migration) section for more information.
  - `migrate_custom`: Migrates a project originally using custom User authentication to using Uniauth. See the [User Migration](https://github.com/lgoodridge/django-uniauth#user-migration) section for more information.
@@ -229,9 +235,7 @@ If you wish to use Uniauth with a project that already has users, a `UserProfile
 
 If your project does not fit either of these conditions, you will need to manually migrate the users as appropiate. Please create a `UserProfile` for each user, and `LinkedEmails` or `InstitutionAccounts` as appropiate.
 
-## Usage Notes
-
-This app provides only the Princeton institution by default as an example. Additional institutions should be configured post-installation as necessary, using the `add_institution` and `remove_institution` commands.
+## Demo Application
 
 The source repository contains a `demo_app` directory which demonstrates how to setup a simple Django app to use Uniauth. This app has no functionality, and exists solely to show off the installable `uniauth` app. A quick-start guide for integrating Uniauth can be found [here](https://github.com/lgoodridge/django-uniauth/tree/master/demo_app).
 

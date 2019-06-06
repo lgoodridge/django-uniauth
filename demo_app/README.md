@@ -1,6 +1,6 @@
 ## Demo App - Quick Start Guide
 
-This app provides an example of how to setup a project to use UniAuth. It has no functionality, and exists solely to show off the installable `uniauth` app.
+This app provides an example of how to setup a project to use Uniauth. It has no functionality, and exists solely to show off the installable `uniauth` app.
 
 ### Installation
 
@@ -19,7 +19,7 @@ This app provides an example of how to setup a project to use UniAuth. It has no
     # Apply database migrations
     python manage.py migrate
     
-    # (Recommended) Add your CAS server(s)
+    # Add your CAS server(s)
     python manage.py add_institution <name> <server_url>
 
     # (Recommended) Create a superuser
