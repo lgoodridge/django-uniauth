@@ -209,6 +209,18 @@ class GetServiceUrlTests(TestCase):
                 "&next=%2Fnext-page%2F%3Fcat%3Ddog")
         assert_urls_equivalent(result, expected, self.assertEqual)
 
+    def test_get_service_url_ignore_ticket(self):
+        """
+        Ensures ticket is ignored if present as query parameter
+        """
+        request = self.factory.get("/origin/", secure=True,
+                data={"foo": "bar", "next": "/next-page/?cat=dog",
+                        "ticket": "FAKE-ticket-456"})
+        result = get_service_url(request)
+        expected = ("https://testserver/origin/?foo=bar"
+                "&next=%2Fnext-page%2F%3Fcat%3Ddog")
+        assert_urls_equivalent(result, expected, self.assertEqual)
+
 
 class GetSettingTests(TestCase):
     """
