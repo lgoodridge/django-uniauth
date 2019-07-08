@@ -41,7 +41,7 @@ class Command(BaseCommand):
         self.stdout.write("\nProceeding... ")
         for user in get_user_model().objects.all():
             # Skip users that already have UserProfiles
-            if hasattr(user, "profile"):
+            if hasattr(user, "uniauth_profile"):
                 continue
             # Update the username to the proper format
             cas_id = user.username

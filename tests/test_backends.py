@@ -70,12 +70,12 @@ class CASBackendTests(TestCase):
         backend = CASBackend()
         user1 = User.objects.create(username="johndoe@gmail.com",
                 email="john.doe@aol.com")
-        InstitutionAccount.objects.create(profile=user1.profile,
+        InstitutionAccount.objects.create(profile=user1.uniauth_profile,
                 institution=self.inst, cas_id="john123")
         user2 = User.objects.create(username="cas-test-inst-jane987")
         fakeout = User.objects.create(username="fakeout@gmail.com",
                 email="fakeout@verizon.net")
-        InstitutionAccount.objects.create(profile=fakeout.profile,
+        InstitutionAccount.objects.create(profile=fakeout.uniauth_profile,
                 institution=self.inst2, cas_id="john123")
         prev_num_users = User.objects.count()
 
@@ -153,9 +153,9 @@ class EmailBackendTests(TestCase):
                 email="johndoe@gmail.com", password="johnpass")
         self.mary = User.objects.create_user(username="marysue@outlook.com",
                 email="mary.sue@gmail.com", password="marypass")
-        LinkedEmail.objects.create(profile=self.mary.profile,
+        LinkedEmail.objects.create(profile=self.mary.uniauth_profile,
                 address="alternate@gmail.com", is_verified=True)
-        LinkedEmail.objects.create(profile=self.mary.profile,
+        LinkedEmail.objects.create(profile=self.mary.uniauth_profile,
                 address="pending@gmail.com", is_verified=False)
         self.cas = User.objects.create_user(username="cas-inst-netid123")
         self.tmp = User.objects.create_user(username="tmp-0123_456",
@@ -166,9 +166,9 @@ class EmailBackendTests(TestCase):
                 email="mrjones@gmail.com", password="mrpass")
         self.ms = User.objects.create_user(username="msjones@gmail.com",
                 email="msjones@gmail.com", password="mspass")
-        LinkedEmail.objects.create(profile=self.mr.profile,
+        LinkedEmail.objects.create(profile=self.mr.uniauth_profile,
                 address="sharedjones@gmail.com", is_verified=True)
-        LinkedEmail.objects.create(profile=self.ms.profile,
+        LinkedEmail.objects.create(profile=self.ms.uniauth_profile,
                 address="sharedjones@gmail.com", is_verified=True)
 
 

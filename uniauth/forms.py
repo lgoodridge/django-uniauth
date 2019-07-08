@@ -29,7 +29,7 @@ class AddLinkedEmailForm(forms.Form):
         the email hasn't been linked to any profile.
         """
         email = self.cleaned_data.get('email')
-        if LinkedEmail.objects.filter(profile=self.user.profile,
+        if LinkedEmail.objects.filter(profile=self.user.uniauth_profile,
                 address=email).exists():
             err_msg = ("That email address has already been linked "
                     "to this account.")
@@ -49,8 +49,8 @@ class AddLinkedEmailForm(forms.Form):
         """
         cleaned_data = super(AddLinkedEmailForm, self).clean()
         max_linked_emails = get_setting('UNIAUTH_MAX_LINKED_EMAILS')
-        if max_linked_emails > 0 and \
-                self.user.profile.linked_emails.count() >= max_linked_emails:
+        num_linked_emails = self.user.uniauth_profile.linked_emails.count()
+        if max_linked_emails > 0 and num_linked_emails >= max_linked_emails:
             err_msg = ("You can not link more than %d emails to your account."
                     % max_linked_emails)
             raise forms.ValidationError(err_msg, code="max_emails")
@@ -68,8 +68,8 @@ class ChangePrimaryEmailForm(forms.Form):
         """
         super(ChangePrimaryEmailForm, self).__init__(*args, **kwargs)
         self.user = user
-        verified_emails = LinkedEmail.objects.filter(profile=self.user.profile,
-                is_verified=True).all()
+        verified_emails = LinkedEmail.objects.filter(
+                profile=self.user.uniauth_profile, is_verified=True).all()
         choices = map(lambda x: (x.address, x.address), verified_emails)
         self.fields['email'] = forms.ChoiceField(choices=choices)
         self.fields['email'].initial = self.user.email
@@ -131,8 +131,8 @@ def _prevent_shared_email_and_password(linked_emails, new_password):
     # Get the set of users who share an email with this user
     for linked_email in linked_emails:
         users = get_user_model().objects.filter(
-                profile__linked_emails__address__iexact=linked_email,
-                profile__linked_emails__is_verified=True,
+                uniauth_profile__linked_emails__address__iexact=linked_email,
+                uniauth_profile__linked_emails__is_verified=True,
                 is_active=True
         ).all()
         users_with_shared_email.update(users)
@@ -161,8 +161,8 @@ class SetPasswordForm(AuthSetPasswordForm):
         password another user with a shared linked email is using.
         """
         new_password = self.cleaned_data.get('new_password1')
-        linked_emails = self.user.profile.linked_emails.values_list('address',
-                flat=True)
+        linked_emails = self.user.uniauth_profile.linked_emails\
+                .values_list('address', flat=True)
         _prevent_shared_email_and_password(linked_emails, new_password)
         return new_password
 
@@ -182,8 +182,8 @@ class PasswordChangeForm(AuthPasswordChangeForm):
         password another user with a shared linked email is using.
         """
         new_password = self.cleaned_data.get('new_password1')
-        linked_emails = self.user.profile.linked_emails.values_list('address',
-                flat=True)
+        linked_emails = self.user.uniauth_profile.linked_emails\
+                .values_list('address', flat=True)
         _prevent_shared_email_and_password(linked_emails, new_password)
         return new_password
 
@@ -206,8 +206,8 @@ class PasswordResetForm(AuthPasswordResetForm):
         primary email.
         """
         users = get_user_model().objects.filter(
-                profile__linked_emails__address__iexact=email,
-                profile__linked_emails__is_verified=True,
+                uniauth_profile__linked_emails__address__iexact=email,
+                uniauth_profile__linked_emails__is_verified=True,
                 is_active=True
         )
         return (u for u in users if u.has_usable_password())

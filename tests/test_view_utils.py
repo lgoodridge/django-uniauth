@@ -26,16 +26,17 @@ class AddInstitutionAccountTests(TestCase):
         """
         user = User.objects.create(username="johndoe")
         User.objects.create(username="cas-test-uni-jd123")
-        _add_institution_account(user.profile, "test-uni", "jd123")
-        linked_accounts = user.profile.accounts.all()
+        _add_institution_account(user.uniauth_profile, "test-uni", "jd123")
+        linked_accounts = user.uniauth_profile.accounts.all()
         cas_user1 = User.objects.get(username="cas-test-uni-jd123")
         self.assertEqual(len(linked_accounts), 1)
         self.assertEqual(linked_accounts[0].institution, self.inst1)
         self.assertEqual(linked_accounts[0].cas_id, "jd123")
 
         User.objects.create(username="cas-other-inst-john.doe4")
-        _add_institution_account(user.profile, "other-inst", "john.doe4")
-        linked_accounts = user.profile.accounts.all()
+        _add_institution_account(user.uniauth_profile, "other-inst",
+                "john.doe4")
+        linked_accounts = user.uniauth_profile.accounts.all()
         cas_user2 = User.objects.get(username="cas-other-inst-john.doe4")
         self.assertEqual(len(linked_accounts), 2)
         self.assertEqual(linked_accounts[1].institution, self.inst2)
@@ -132,7 +133,7 @@ class SendVerificationEmail(TestCase):
         a sent verification email is correct
         """
         user = User.objects.create(username="student")
-        verify_email = LinkedEmail.objects.create(profile=user.profile,
+        verify_email = LinkedEmail.objects.create(profile=user.uniauth_profile,
                 address="toverify@gmail.com", is_verified=False)
         request = self.factory.get("/accounts/somepage/", secure=False)
         _send_verification_email(request, "student@example.edu", verify_email)
@@ -143,8 +144,9 @@ class SendVerificationEmail(TestCase):
         self.assertEqual(mail.outbox[0].from_email, "uniauth@testsmtp.ml")
 
         user2 = User.objects.create(username="otherstud")
-        verify_email2 = LinkedEmail.objects.create(profile=user2.profile,
-                address="stud_2@example.edu", is_verified=False)
+        verify_email2 = LinkedEmail.objects.create(
+                profile=user2.uniauth_profile, address="stud_2@example.edu",
+                is_verified=False)
         request = self.factory.get("/accounts/otherpage/", secure=True)
         _send_verification_email(request, "stud_2@example.edu", verify_email2)
         self.assertEqual(len(mail.outbox), 2)

@@ -15,7 +15,8 @@ class UserProfile(models.Model):
     """
 
     # User this profile is extending
-    user = models.OneToOneField(get_user_model(), related_name='profile',
+    user = models.OneToOneField(get_user_model(),
+            related_name='uniauth_profile',
             on_delete=models.CASCADE, null=False)
 
     def get_display_id(self):

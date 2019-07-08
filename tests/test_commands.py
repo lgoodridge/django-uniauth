@@ -139,7 +139,7 @@ class MigrateCustomCommandTests(TestCase):
         self.assertEqual(LinkedEmail.objects.count(), 1)
         self.assertTrue(LinkedEmail.objects.filter(address="mary.sue@gmail.com",
                 profile__user__username="marysue").exists())
-        self.assertEqual(self.john.profile.linked_emails.count(), 0)
+        self.assertEqual(self.john.uniauth_profile.linked_emails.count(), 0)
 
 
 class RemoveInsitutionCommandTests(TestCase):

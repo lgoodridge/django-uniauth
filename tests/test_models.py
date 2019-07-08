@@ -74,14 +74,14 @@ class UserProfileModelTests(TestCase):
         Ensure the basic model methods + attributes work properly
         """
         user = User.objects.create(username="new-user")
-        self.assertNotEqual(user.profile, None)
-        self.assertEqual(user.profile.user, user)
-        self.assertEqual(str(user.profile), "new-user")
+        self.assertNotEqual(user.uniauth_profile, None)
+        self.assertEqual(user.uniauth_profile.user, user)
+        self.assertEqual(str(user.uniauth_profile), "new-user")
         user2 = User.objects.create(username="other-user",
                 email="other@gmail.com")
-        self.assertEqual(str(user2.profile), "other@gmail.com")
+        self.assertEqual(str(user2.uniauth_profile), "other@gmail.com")
         result = UserProfile.objects.get(user__username="new-user")
-        self.assertEqual(result, user.profile)
+        self.assertEqual(result, user.uniauth_profile)
         with self.assertRaises(IntegrityError):
             UserProfile.objects.create()
 
@@ -90,12 +90,12 @@ class UserProfileModelTests(TestCase):
         Ensure the get_display_id method works properly
         """
         user = User.objects.create(username="new-user")
-        self.assertEqual(user.profile.get_display_id(), "new-user")
+        self.assertEqual(user.uniauth_profile.get_display_id(), "new-user")
         user = User.objects.create(username="cas-example-inst-id123")
-        self.assertEqual(user.profile.get_display_id(), "id123")
+        self.assertEqual(user.uniauth_profile.get_display_id(), "id123")
         user = User.objects.create(username="john.doe@example.com",
                 email="otheraddress@example.com")
-        self.assertEqual(user.profile.get_display_id(), "john.doe")
+        self.assertEqual(user.uniauth_profile.get_display_id(), "john.doe")
 
 
 class LinkedEmailModelTests(TestCase):
@@ -108,14 +108,14 @@ class LinkedEmailModelTests(TestCase):
         Ensure the basic model methods + attributes work properly
         """
         user = User.objects.create(username="new-user")
-        linked_email = LinkedEmail.objects.create(profile=user.profile,
+        linked_email = LinkedEmail.objects.create(profile=user.uniauth_profile,
                 address="example@gmail.com", is_verified=True)
-        self.assertEqual(linked_email.profile, user.profile)
+        self.assertEqual(linked_email.profile, user.uniauth_profile)
         self.assertEqual(linked_email.address, "example@gmail.com")
         self.assertTrue(linked_email.is_verified)
         self.assertTrue("new-user" in str(linked_email))
         self.assertTrue("example@gmail.com" in str(linked_email))
-        result = LinkedEmail.objects.get(profile=user.profile,
+        result = LinkedEmail.objects.get(profile=user.uniauth_profile,
                 address="example@gmail.com")
         self.assertEqual(result, linked_email)
 
@@ -129,10 +129,10 @@ class LinkedEmailModelTests(TestCase):
 
         # Don't allow shared emails if setting is False
         with self.settings(UNIAUTH_ALLOW_SHARED_EMAILS=False):
-            LinkedEmail.objects.create(profile=user1.profile,
+            LinkedEmail.objects.create(profile=user1.uniauth_profile,
                     address="shared@example.com", is_verified=True)
             try:
-                email = LinkedEmail(profile=user2.profile,
+                email = LinkedEmail(profile=user2.uniauth_profile,
                         address="shared@example.com", is_verified=True)
                 email.clean()
                 email.save()
@@ -140,35 +140,36 @@ class LinkedEmailModelTests(TestCase):
                         "UNIAUTH_ALLOW_SHARED_EMAILS was False.")
             except ValidationError:
                 pass
-            self.assertFalse(LinkedEmail.objects.filter(profile=user2.profile,
-                        address="shared@example.com").exists())
+            self.assertFalse(LinkedEmail.objects.filter(
+                    profile=user2.uniauth_profile,
+                    address="shared@example.com").exists())
 
         # Don't allow more than the max number of linked emails per profile
         with self.settings(UNIAUTH_MAX_LINKED_EMAILS=5):
             for i in range(settings.UNIAUTH_MAX_LINKED_EMAILS):
-                LinkedEmail.objects.create(profile=user3.profile,
+                LinkedEmail.objects.create(profile=user3.uniauth_profile,
                         address="email%d@example.com"%i, is_verified=(i%2==0))
             try:
-                email = LinkedEmail(profile=user3.profile,
+                email = LinkedEmail(profile=user3.uniauth_profile,
                         address="another@example.com")
                 email.clean()
                 email.save()
                 self.fail("Able to link more than UNIAUTH_MAX_LINKED_EMAILS")
             except ValidationError:
                 pass
-            self.assertFalse(LinkedEmail.objects.filter(profile=user3.profile,
+            self.assertFalse(LinkedEmail.objects.filter(profile=user3.uniauth_profile,
                     address="another@example.com").exists())
 
         # Allow any number of linked emails if setting is <= 0
         with self.settings(UNIAUTH_MAX_LINKED_EMAILS=-1):
             for i in range(100):
                 email, _ = LinkedEmail.objects.get_or_create(
-                        profile=user3.profile, address="email%d@example.com"%i,
-                        is_verified=(i%2==0))
+                        profile=user3.uniauth_profile,
+                        address="email%d@example.com"%i, is_verified=(i%2==0))
                 email.clean()
                 email.save()
-            self.assertEqual(LinkedEmail.objects.filter(profile=user3.profile)\
-                    .count(), 100)
+            self.assertEqual(LinkedEmail.objects.filter(
+                    profile=user3.uniauth_profile).count(), 100)
 
 
 class InstitutionModelTests(TestCase):
@@ -205,9 +206,10 @@ class InstitutionAccountModelTests(TestCase):
         user = User.objects.create(username="new-user")
         institution = Institution.objects.create(name="Test Inst",
                 slug="test-inst", cas_server_url="https://fed.example.edu/")
-        account = InstitutionAccount.objects.create(profile=user.profile,
+        account = InstitutionAccount.objects.create(
+                profile=user.uniauth_profile,
                 institution=institution, cas_id="netid123")
-        self.assertEqual(account.profile, user.profile)
+        self.assertEqual(account.profile, user.uniauth_profile)
         self.assertEqual(account.institution, institution)
         self.assertEqual(account.cas_id, "netid123")
         self.assertTrue("test-inst" in str(account))

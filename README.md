@@ -23,6 +23,10 @@ The app was designed to replace key features of the built-in `django.contrib.aut
  - Supports CAS authentication and Single Sign On
  - Multiple CAS servers can be configured and users may use any for authentication
 
+## Major Updates
+
+ - **1.2.0:** Uniauth `UserProfile` model now backreferenced from the Django `User` model via `user.uniauth_profile` instead of `user.profile`.
+
 ## Tutorials
 
  - How to add CAS authentication with Uniauth: [link](https://medium.com/@ldgoodridge95/adding-cas-authentication-to-your-django-app-with-django-uniauth-13ff4e1e7bfa)
@@ -120,13 +124,13 @@ Uniauth has the following models:
 
 ### UserProfile:
 
-This model is automatically attached to each User upon creation, and extends the User model with the extra data Uniauth requires. The other Uniauth models all interact with the `UserProfile` model rather than the User model directly. Accessible via `user.profile`.
+This model is automatically attached to each User upon creation, and extends the User model with the extra data Uniauth requires. The other Uniauth models all interact with the `UserProfile` model rather than the User model directly. Accessible via `user.uniauth_profile`.
 
  - `get_display_id`: This method returns a more display-friendly ID for the user, using their username. If the User was created via CAS authentication, it will return their username without the institution prefix (so a User with username "cas-exampleinst-id123" would return "id123"). If their username is an email address, it will return everything before the "@" symbol (so "johndoe@example.com" would become "johndoe"). Otherwise the username is returned unmodified. These generated IDs are not guaranteed to be unique.
 
 ### LinkedEmail:
 
-Represents an email address linked to a User's account. Accessible via `user.profile.linked_emails`.
+Represents an email address linked to a User's account. Accessible via `user.uniauth_profile.linked_emails`.
 
 ### Institution:
 
@@ -134,7 +138,7 @@ Represents an organization possesing an authentication server that can be logged
 
 ### InstitutionAccount:
 
-Represents an account a User holds with a particular Institution. Accessible via `user.profile.accounts`.
+Represents an account a User holds with a particular Institution. Accessible via `user.uniauth_profile.accounts`.
 
 ## Backends
 

@@ -67,8 +67,8 @@ class LinkedEmailBackend(ModelBackend):
         address matching the provided email value
         """
         return user_model._default_manager.filter(
-                profile__linked_emails__address__iexact=email,
-                profile__linked_emails__is_verified=True
+                uniauth_profile__linked_emails__address__iexact=email,
+                uniauth_profile__linked_emails__is_verified=True
         ).all()
 
     def authenticate(self, request, email=None, password=None, **kwargs):
@@ -117,7 +117,7 @@ class UsernameOrLinkedEmailBackend(LinkedEmailBackend):
         username_field = user_model.USERNAME_FIELD
         matched_users =  user_model._default_manager.filter(
                 (Q(**{username_field: username})) |
-                (Q(profile__linked_emails__address__iexact=username) &
-                    Q(profile__linked_emails__is_verified=True))
+                (Q(uniauth_profile__linked_emails__address__iexact=username) &
+                    Q(uniauth_profile__linked_emails__is_verified=True))
         ).all()
         return filter(lambda x: not is_tmp_user(x), matched_users)

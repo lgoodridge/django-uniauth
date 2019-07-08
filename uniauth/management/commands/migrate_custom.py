@@ -32,7 +32,7 @@ class Command(BaseCommand):
         skipped = []
         for user in get_user_model().objects.all():
             # Skip users that already have UserProfiles
-            if hasattr(user, "profile"):
+            if hasattr(user, "uniauth_profile"):
                 continue
             # Skip users lacking a username/email address or password
             if (not user.username and not user.email) or not user.password:

@@ -62,7 +62,7 @@
                                             <span class="settings-email-address settings-item-text">{{ request.user.email }}</span>
                                             <span class="badge badge-success">Primary</span>
                                         </li>
-                                        {% for email in request.user.profile.linked_emails.all %}
+                                        {% for email in request.user.uniauth_profile.linked_emails.all %}
                                             {% if email.address != request.user.email %}
                                                 <li class="settings-email-item list-group-item">
                                                     <span class="settings-email-address settings-item-text">{{ email.address }}</span>
@@ -148,7 +148,7 @@
                                 <span id="settings-account-header" class="settings-header">Linked Accounts</span>
                                 <div class="form-group no-margin-bottom">
                                     <ul id="settings-accounts-list" class="list-group">
-                                        {% for account in request.user.profile.accounts.all|dictsort:"institution.name" %}
+                                        {% for account in request.user.uniauth_profile.accounts.all|dictsort:"institution.name" %}
                                             <li class="settings-account-item list-group-item">
                                                 <span class="settings-item-text">
                                                     <b>{{ account.institution.name }}</b>

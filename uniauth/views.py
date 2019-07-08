@@ -337,8 +337,9 @@ def signup(request):
             # Set user's password + create linked email
             user.set_password(form.cleaned_data["password1"])
             user.save()
-            email, _ = LinkedEmail.objects.get_or_create(profile=user.profile,
-                    address=form_email, is_verified=False)
+            email, _ = LinkedEmail.objects.get_or_create(
+                    profile=user.uniauth_profile, address=form_email,
+                    is_verified=False)
 
             # Send verification email + render waiting template
             _send_verification_email(request, email.address, email)
@@ -424,7 +425,8 @@ def settings(request):
         elif request.POST.get('add-email-submitted'):
             add_email_form = AddLinkedEmailForm(request.user, request.POST)
             if add_email_form.is_valid():
-                email = LinkedEmail.objects.create(profile=request.user.profile,
+                email = LinkedEmail.objects.create(
+                        profile=request.user.uniauth_profile,
                         address=add_email_form.cleaned_data["email"],
                         is_verified=False)
                 _send_verification_email(request, email.address, email)
@@ -531,7 +533,7 @@ def link_to_profile(request):
             # Merge the unlinked account into the logged in profile,
             # then add the institution account described by the username
             merge_model_instances(user, [unlinked_user])
-            _add_institution_account(user.profile, username_split[1],
+            _add_institution_account(user.uniauth_profile, username_split[1],
                     username_split[2])
 
             slug = username_split[1]
@@ -589,7 +591,7 @@ def link_from_profile(request, institution):
             if is_unlinked_account(user):
                 merge_model_instances(request.user, [user])
                 username_split = get_account_username_split(user.username)
-                _add_institution_account(request.user.profile,
+                _add_institution_account(request.user.uniauth_profile,
                         username_split[1], username_split[2])
 
             return HttpResponseRedirect(next_url)
@@ -650,8 +652,8 @@ def verify_token(request, pk_base64, token):
             # account described by the temporary username
             if old_username.startswith("cas"):
                 username_split = get_account_username_split(old_username)
-                _add_institution_account(user.profile, username_split[1],
-                        username_split[2])
+                _add_institution_account(user.uniauth_profile,
+                        username_split[1], username_split[2])
 
         # If UNIAUTH_ALLOW_SHARED_EMAILS is False, and there were
         # pending LinkedEmails for this address on other accounts,
