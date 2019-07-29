@@ -5,7 +5,7 @@ with open("README.md", "r") as readme:
 
 setuptools.setup(
     name="django-uniauth",
-    version="1.2.0",
+    version="1.2.1",
     author="Lance Goodridge",
     author_email="ldgoodridge95@gmail.com",
     keywords=["django", "auth", "authentication", "cas", "sso", "single sign-on"],

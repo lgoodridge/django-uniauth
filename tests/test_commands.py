@@ -31,12 +31,33 @@ class AddInstitutionCommandTests(TestCase):
         """
         call_command("add_institution", "Test", "https://www.example.com")
         call_command("add_institution", "Other Inst", "http://fed.foobar.edu/")
+        call_command("add_institution", "Test", "https://www.example.com",
+            "--update-existing")
         actual = Institution.objects.order_by("slug")
         expected = [
                 Institution(name="Other Inst", slug="other-inst",
                     cas_server_url="http://fed.foobar.edu/"),
                 Institution(name="Test", slug="test",
                     cas_server_url="https://www.example.com"),
+        ]
+        self._check_institutions(actual, expected)
+
+    def test_add_institution_command_update_existing_valid_inputs(self):
+        """
+        Ensures command works as expected for valid inputs with the
+        --update-existing option.
+        """
+        call_command("add_institution", "Test", "https://www.example.com",
+            "--update-existing")
+        call_command("add_institution", "Other Inst", "http://fed.foobar.edu/")
+        call_command("add_institution", "Test", "https://fed.university.edu/",
+             "--update-existing")
+        actual = Institution.objects.order_by("slug")
+        expected = [
+                Institution(name="Other Inst", slug="other-inst",
+                    cas_server_url="http://fed.foobar.edu/"),
+                Institution(name="Test", slug="test",
+                    cas_server_url="https://fed.university.edu/"),
         ]
         self._check_institutions(actual, expected)
 
@@ -55,7 +76,6 @@ class AddInstitutionCommandTests(TestCase):
         call_command("add_institution", "Test", "https://www.example.com")
         self.assertRaisesRegex(CommandError, "exists", call_command,
                 "add_institution", "test", "https://www.foo.bar")
-
 
 class MigrateCASCommandTests(TestCase):
     """
