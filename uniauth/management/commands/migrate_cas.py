@@ -5,6 +5,7 @@ CAS for authentication over to Uniauth.
 Execution: python manage.py migrate_cas <slug>
 """
 
+from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from uniauth.models import Institution, InstitutionAccount, UserProfile
@@ -16,6 +17,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('slug')
 
+    @transaction.atomic
     def handle(self, *args, **options):
         slug = options['slug']
 
