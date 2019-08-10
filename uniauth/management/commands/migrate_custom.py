@@ -5,6 +5,7 @@ custom User authentication over to Uniauth.
 Execution: python manage.py migrate_custom
 """
 
+from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from uniauth.models import LinkedEmail, UserProfile
@@ -13,6 +14,7 @@ from uniauth.utils import get_input
 class Command(BaseCommand):
     help = "Migrates a project using custom User auhentication to Uniauth."
 
+    @transaction.atomic
     def handle(self, *args, **options):
         message = ("This command is intended to migrate projects "
             "previously using custom User authentication to using Uniauth.\n\n"
