@@ -76,7 +76,7 @@
                                         <a id="cas-link" href="{{ institutions.0.2 }}{{ query_params }}">To {{ institutions.0.0 }} CAS</a>
                                     {% else %}
                                         <select id="cas-select" class="form-control input-block {% if not display_standard %}only-cas-login{% endif %}" onchange="tmp=this.value;this.value='';location=tmp;">
-                                            <option value="" selected="selected" disabled="disabled" hidden="hidden">(Select Server)</option>
+                                            <option value="" selected="selected" disabled="disabled" hidden="hidden">(Select Institution)</option>
                                             {% for institution in institutions %}
                                             <option value="{{ institution.2 }}{{ query_params }}">{{ institution.0 }}</option>
                                             {% endfor %}
