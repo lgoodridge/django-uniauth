@@ -38,6 +38,9 @@ target/
 .coverage
 .tox/
 
+# pyenv
+.python-version
+
 # Temp Files
 .*.sw*
 

@@ -16,9 +16,9 @@ The app was designed to replace key features of the built-in `django.contrib.aut
 ## Features
 
  - Supports Python 2.7, 3.5+
- - Supports Django 1.11, 2.x
- - Supports using a [custom User model](https://docs.djangoproject.com/en/2.1/topics/auth/customizing/#specifying-a-custom-user-model)
- - Supports using email addresses as the ["username" field](https://docs.djangoproject.com/en/2.1/topics/auth/customizing/#django.contrib.auth.models.CustomUser.USERNAME_FIELD)
+ - Supports Django 1.11, 2.x, 3.x
+ - Supports using a [custom User model](https://docs.djangoproject.com/en/2.2/topics/auth/customizing/#specifying-a-custom-user-model)
+ - Supports using email addresses as the ["username" field](https://docs.djangoproject.com/en/2.2/topics/auth/customizing/#django.contrib.auth.models.CustomUser.USERNAME_FIELD)
  - Users can link multiple email addresses and use any for authentication
  - Supports CAS authentication and Single Sign On
  - Multiple CAS servers can be configured and users may use any for authentication
@@ -86,14 +86,14 @@ Uniauth will send emails to users when necessary, such as to verify email addres
 
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-On production, a real email backend should be properly set up. See the docs on [setting up an SMTP backend](https://docs.djangoproject.com/en/2.1/topics/email/#smtp-backend) for more information.
+On production, a real email backend should be properly set up. See the docs on [setting up an SMTP backend](https://docs.djangoproject.com/en/2.2/topics/email/#smtp-backend) for more information.
 
 ## Settings
 
 Uniauth uses the following settings from the `django.contrib.auth` package:
 
- - [`LOGIN_URL`]( https://docs.djangoproject.com/en/2.1/ref/settings/#login-url): Determines where to redirect the user for login, particularly when using the `@login_required` decorator. Defaults to `/accounts/login/`.
- - [`PASSWORD_RESET_TIMEOUT_DAYS`](https://docs.djangoproject.com/en/2.1/ref/settings/#password-reset-timeout-days): Determines how long password reset and email verification links are valid after being generated. Defaults to `3`.
+ - [`LOGIN_URL`]( https://docs.djangoproject.com/en/2.2/ref/settings/#login-url): Determines where to redirect the user for login, particularly when using the `@login_required` decorator. Defaults to `/accounts/login/`.
+ - [`PASSWORD_RESET_TIMEOUT_DAYS`](https://docs.djangoproject.com/en/2.2/ref/settings/#password-reset-timeout-days): Determines how long password reset and email verification links are valid after being generated. Defaults to `3`.
 
 The following custom settings are also used:
 
@@ -187,9 +187,9 @@ The remaining views are used internally by Uniauth, and should not be linked to 
  - `/link-to-account/`: If the user is logged into an `InstitutionAccount` not yet linked to a Uniauth profile, this view offers them the choice between linking it to an existing profile, or creating a new one, and linking it to that upon activation.
  - `/link-from-account/`: If the user is logged into an activated Uniauth profile, this view gives them the opportunity to log into an institution via a supported backend, then link that `InstitutionAccount` to the current profile.
  - `/verify-token/`: Intermediate page used during the email verification process. Verifies the token contained within the link sent to the email address.
- - `/password-reset-*/`: Intermediate pages used during the password reset process. Are nearly identical to the [built-in password reset views](https://docs.djangoproject.com/en/2.1/topics/auth/default/#django.contrib.auth.views.PasswordResetView) provided by the `django.contrib.auth` package.
+ - `/password-reset-*/`: Intermediate pages used during the password reset process. Are nearly identical to the [built-in password reset views](https://docs.djangoproject.com/en/2.2/topics/auth/default/#django.contrib.auth.views.PasswordResetView) provided by the `django.contrib.auth` package.
 
-Uniauth also implements its own version of the `@login_required` decorator, which ensure the user is logged in with an activated Uniauth profile before accessing the view. It may be used identically to the [built-in `@login_required` decorator](https://docs.djangoproject.com/en/2.1/topics/auth/default/#the-login-required-decorator), and should be added to your own views in place of the default version.
+Uniauth also implements its own version of the `@login_required` decorator, which ensure the user is logged in with an activated Uniauth profile before accessing the view. It may be used identically to the [built-in `@login_required` decorator](https://docs.djangoproject.com/en/2.2/topics/auth/default/#the-login-required-decorator), and should be added to your own views in place of the default version.
 
 ## Template Customization
 
