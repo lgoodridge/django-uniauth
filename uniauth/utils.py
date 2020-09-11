@@ -11,6 +11,7 @@ try:
 except ImportError:
     from urllib.parse import urlencode, urlunparse
 
+from rest_framework_simplejwt.tokens import RefreshToken
 
 # The default value for all settings used by Uniauth
 DEFAULT_SETTING_VALUES = {
@@ -190,3 +191,16 @@ def is_unlinked_account(user):
     an InstitutionAccount not yet linked to a Uniauth profile.
     """
     return user.username and user.username.startswith('cas-')
+
+def get_tokens_for_user(user, **kwargs):
+    # generate a refresh token for the valid user
+    refresh = RefreshToken.for_user(user)
+    # add any passed in arguments as custom claims (i.e. auth_method='uniauth')
+    for key, value in kwargs.items():
+        refresh[key] = value
+
+    # return the pair of tokens (refresh, access)
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }

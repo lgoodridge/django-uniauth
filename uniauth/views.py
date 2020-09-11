@@ -1,3 +1,4 @@
+import json
 from cas import CASClient
 from django.contrib.auth import authenticate, login as auth_login, \
         logout as auth_logout, REDIRECT_FIELD_NAME
@@ -15,7 +16,9 @@ from django.urls import reverse, reverse_lazy
 from django.urls.exceptions import NoReverseMatch
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.debug import sensitive_post_parameters
+from rest_framework_simplejwt.tokens import RefreshToken
 from uniauth.decorators import login_required
 from uniauth.forms import AddLinkedEmailForm, ChangePrimaryEmailForm, \
         LinkedEmailActionForm, LoginForm, PasswordChangeForm, \
@@ -26,7 +29,7 @@ from uniauth.tokens import token_generator
 from uniauth.utils import choose_username, decode_pk, encode_pk, \
         get_account_username_split, get_protocol, get_random_username, \
         get_redirect_url, get_service_url, get_setting, is_tmp_user, \
-        is_unlinked_account
+        is_unlinked_account, get_tokens_for_user
 try:
     from urllib import urlencode
     from urlparse import urlunparse
@@ -66,7 +69,7 @@ def _get_global_context(request):
     return context
 
 
-def _login_success(request, user, next_url, drop_params=[]):
+def _login_success(request, user, next_url, drop_params=[], cas_auth=None):
     """
     Determines where to go upon successful authentication:
     Redirects to link tmp account page if user is a temporary
@@ -76,7 +79,8 @@ def _login_success(request, user, next_url, drop_params=[]):
     not propogated to the destination URL
     """
     query_params = request.GET.copy()
-
+    api_mode = get_setting('UNIAUTH_API_MODE')
+    
     # Drop all blacklisted query parameters
     for key in drop_params:
         if key in query_params:
@@ -93,11 +97,17 @@ def _login_success(request, user, next_url, drop_params=[]):
         suffix = ''
         if REDIRECT_FIELD_NAME in query_params:
             del query_params[REDIRECT_FIELD_NAME]
+        if api_mode:
+            # get object containing refresh and access token for user
+            jwt_tokens = get_tokens_for_user(user, auth_method=cas_auth)
+            # combine query_params object with jwt_tokens object
+            query_params.update(jwt_tokens) 
         if len(query_params) > 0:
             suffix = '?' + urlencode(query_params)
         return HttpResponseRedirect(next_url + suffix)
 
 
+@ensure_csrf_cookie
 def login(request):
     """
     Authenticates the user, then redirects them to the
@@ -110,6 +120,7 @@ def login(request):
     """
     next_url = request.GET.get('next')
     context = _get_global_context(request)
+    api_mode = get_setting('UNIAUTH_API_MODE')
 
     if not next_url:
         next_url = get_redirect_url(request)
@@ -120,6 +131,7 @@ def login(request):
 
     display_standard = get_setting('UNIAUTH_LOGIN_DISPLAY_STANDARD')
     display_cas = get_setting('UNIAUTH_LOGIN_DISPLAY_CAS')
+    api_mode = get_setting('UNIAUTH_API_MODE')
     num_institutions = len(context['institutions'])
 
     # Ensure the login settings are configured correctly
@@ -147,6 +159,9 @@ def login(request):
         if num_institutions == 1:
             return HttpResponseRedirect(institutions[0][2] + query_params)
 
+        elif api_mode:
+            # return institutions and queryparams to be displayed on custom UI login form
+            return JsonResponse({'institutions': institutions, 'queryparams': query_params})
         # Otherwise, render the page (without the Login form)
         else:
             return render(request, 'uniauth/login.html', context)
@@ -154,22 +169,36 @@ def login(request):
     # If we are displaying the login form, and it's
     # a POST request, attempt to validate the form
     elif request.method == "POST":
-        form = LoginForm(request, request.POST)
+        if request.META['CONTENT_TYPE'] == 'application/json':
+            # in API mode, form data will be sent through Json, which must be handled differently
+            form = LoginForm(request, json.loads(request.body.decode()))
+        else:
+            form = LoginForm(request, request.POST)
 
         # Authentication successful: setup session + proceed
         if form.is_valid():
             user = form.get_user()
             auth_login(request, user)
+            if api_mode:
+                # return json tokens for authenticated user
+                jwt_tokens = get_tokens_for_user(user, auth_method='uniauth')
+                return JsonResponse(jwt_tokens)
             request.session['auth-method'] = "uniauth"
             return _login_success(request, user, next_url)
 
         # Authentication failed: render form errors
         else:
+            if api_mode:
+                # return authentication error through Json
+                return JsonResponse({'errors': "Incorrect username or password, please try again."})
             context['form'] = form
             return render(request, 'uniauth/login.html', context)
 
     # Otherwise, render a blank Login form
     else:
+        if api_mode:
+            # displaying standard form; return insitutions for CAS login option
+            return JsonResponse({'institutions': context['institutions'], 'queryparams': context['query_params']})
         form = LoginForm(request)
         context['form'] = form
         return render(request, 'uniauth/login.html', context)
@@ -184,6 +213,7 @@ def cas_login(request, institution):
     """
     next_url = request.GET.get('next')
     ticket = request.GET.get('ticket')
+    api_mode = get_setting('UNIAUTH_API_MODE')
 
     # Ensure there is an institution with the provided slug
     try:
@@ -196,7 +226,7 @@ def cas_login(request, institution):
 
     # If the user is already authenticated, proceed to next page
     if request.user.is_authenticated:
-        return _login_success(request, request.user, next_url)
+        return _login_success(request, request.user, next_url, cas_auth="cas-" + institution.slug)
 
     service_url = get_service_url(request, next_url)
     client = CASClient(version=2, service_url=service_url,
@@ -213,7 +243,7 @@ def cas_login(request, institution):
                 request.session.create()
             auth_login(request, user)
             request.session['auth-method'] = "cas-" + institution.slug
-            return _login_success(request, user, next_url, ["ticket"])
+            return _login_success(request, user, next_url, ["ticket"], cas_auth="cas-" + institution.slug)
 
         # Authentication failed: raise permission denied
         else:
@@ -221,6 +251,9 @@ def cas_login(request, institution):
 
     # If no ticket was provided, redirect to the
     # login URL for the institution's CAS server
+    elif api_mode: 
+        # return CAS server login URL via Json which will be used to redirect
+        return JsonResponse({'redirect-to': client.get_login_url()})
     else:
         return HttpResponseRedirect(client.get_login_url())
 
@@ -240,7 +273,17 @@ def logout(request):
     setting is true.
     """
     next_page = request.GET.get('next')
-    auth_method = request.session.get('auth-method')
+    api_mode = get_setting('UNIAUTH_API_MODE')
+
+    if api_mode:
+        # get JWT token from authorization headers; .split(' ') to get the token without Bearer prefix
+        base64_token = request.META['HTTP_AUTHORIZATION'].split(' ')[1]
+        # convert the base64 string token into a Refresh Token object
+        token = RefreshToken(base64_token)
+        # get the auth_method from the JWT token
+        auth_method = token['auth_method']
+    else:
+        auth_method = request.session.get('auth-method')    
 
     if not next_page and get_setting('UNIAUTH_LOGOUT_REDIRECT_URL'):
         next_page = get_redirect_url(request,
@@ -266,10 +309,16 @@ def logout(request):
         )
         client = CASClient(version=2, service_url=get_service_url(request),
                 server_url=institution.cas_server_url)
+        if api_mode:
+            # return the official logout link for the CAS institution
+            return JsonResponse({'redirect-to': client.get_logout_url(redirect_url), 'logout-method': 'CAS'})
         return HttpResponseRedirect(client.get_logout_url(redirect_url))
 
     # If next page is set, proceed to it
     elif next_page:
+        if api_mode:
+            # return the page to return to after logging out
+            return JsonResponse({'redirect-to': next_page, 'logout-method': 'UNIAUTH'})
         return HttpResponseRedirect(next_page)
 
     # Otherwise, render the logout view
@@ -299,6 +348,7 @@ def _send_verification_email(request, to_email, verify_email):
     email.send()
 
 
+@ensure_csrf_cookie
 def signup(request):
     """
     Creates a new Uniauth profile with the provided
@@ -309,9 +359,14 @@ def signup(request):
     """
     next_url = request.GET.get('next')
     context = _get_global_context(request)
-
+    api_mode = get_setting('UNIAUTH_API_MODE')
+    
     if not next_url:
-        next_url = get_redirect_url(request)
+        if api_mode:
+            # if in API_MODE, get the request to redirect to if already authenticated
+            next_url = get_redirect_url(request, use_referer=True)
+        else:
+            next_url = get_redirect_url(request)
 
     # If the user is already authenticated + has a Uniauth
     # profile, proceed to next page
@@ -321,7 +376,11 @@ def signup(request):
 
     # If it's a POST request, attempt to validate the form
     if request.method == "POST":
-        form = SignupForm(request.POST)
+        if request.META['CONTENT_TYPE'] == 'application/json':
+            # in API mode, form data will be sent through Json, which must be handled differently
+            form = SignupForm(json.loads(request.body))
+        else:
+            form = SignupForm(request.POST)
 
         # Validation successful: setup temporary user
         if form.is_valid():
@@ -343,11 +402,22 @@ def signup(request):
 
             # Send verification email + render waiting template
             _send_verification_email(request, email.address, email)
+            if api_mode:
+                return JsonResponse({   
+                                        "redirect-to":"/email/verify/waiting", 
+                                        "email": email.address, 
+                                        "refresh": jwt_tokens['refresh'], 
+                                        "access": jwt_tokens['access'],
+                                    })
             return render(request, 'uniauth/verification-waiting.html',
                     {'email': email.address, 'is_signup': True})
 
         # Validation failed: render form errors
         else:
+            if api_mode:
+                # return the errors in a parseable json format
+                errors = [(k, v[0]) for k, v in form.errors.items()]
+                return JsonResponse({"errors": errors})
             context['form'] = form
             return render(request, 'uniauth/signup.html', context)
 
@@ -615,6 +685,7 @@ def verify_token(request, pk_base64, token):
     next_url = request.GET.get('next') or request.GET.get(REDIRECT_FIELD_NAME)
     context = {'next_url': next_url, 'is_signup': False}
     user_model = get_user_model()
+    api_mode = get_setting('UNIAUTH_API_MODE')
 
     # Attempt to get the linked email to verify
     try:
@@ -662,6 +733,8 @@ def verify_token(request, pk_base64, token):
             LinkedEmail.objects.filter(address=email.address,
                     is_verified=False).delete()
 
+        if api_mode: 
+            return HttpResponseRedirect(get_setting('UNIAUTH_UI_DOMAIN') + '/email/verify/success')
         return render(request, 'uniauth/verification-success.html', context)
 
     # If anything went wrong, just render the failed verification template
