@@ -19,6 +19,7 @@ setuptools.setup(
     install_requires=[
         "Django>=1.11",
         "python-cas>=1.4.0",
+        "djangorestframework-simplejwt>=3.8",
     ],
     extras_require = {
         ":python_version<='3.2'": ["mock"],
