@@ -77,6 +77,39 @@ class AddInstitutionCommandTests(TestCase):
         self.assertRaisesRegex(CommandError, "exists", call_command,
                 "add_institution", "test", "https://www.foo.bar")
 
+
+class FlushTmpUsersTests(TestCase):
+    """
+    Tests the flush_tmp_users management command
+    """
+
+    @mock.patch("uniauth.management.commands.flush_tmp_users.get_input")
+    @mock.patch("uniauth.management.commands.flush_tmp_users.flush_old_tmp_users")
+    def test_flush_tmp_users_command_correct(self, mock_flush, mock_get_input):
+        """
+        Ensure command works as expected given valid starting conditions
+        Ensures command propagates optional arguments properly, and uses
+        expected default values when optional arguments are not provided
+        """
+        # Ensure command fails gracefully with invalid arguments
+        self.assertRaisesRegex(CommandError, "days", call_command,
+                "flush_tmp_users", "dne")
+
+        # Ensure nothing happens when the user does not agree to continue
+        mock_get_input.return_value = "no"
+        call_command("flush_tmp_users")
+        mock_flush.assert_not_called()
+
+        # Ensure command propagates the optional days argument properly
+        mock_get_input.return_value = "yes"
+        call_command("flush_tmp_users", 4)
+        mock_flush.assert_called_once_with(days=4)
+
+        # Ensure command propagates uses expected default otherwise
+        call_command("flush_tmp_users")
+        mock_flush.assert_called_with(days=1)
+
+
 class MigrateCASCommandTests(TestCase):
     """
     Tests the migrate_cas management command

@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth import get_user_model, REDIRECT_FIELD_NAME
 from django.shortcuts import resolve_url
@@ -66,6 +67,22 @@ def encode_pk(pk):
     return encoded
 
 
+def flush_old_tmp_users(days=1):
+    """
+    Delete temporary users more than the specified number of days old.
+
+    Returns the number of users deleted by this action.
+    """
+    user_model = get_user_model()
+    old_tmp_users = user_model.objects.filter(
+        username__startswith="tmp-",
+        date_joined__lte=timezone.now()-timedelta(days=days)
+    )
+    num_deleted = old_tmp_users.count()
+    old_tmp_users.delete()
+    return num_deleted
+
+
 def get_account_username_split(username):
     """
     Accepts the username for an unlinked InstitutionAccount
@@ -84,8 +101,7 @@ def get_account_username_split(username):
 
 def get_input(prompt):
     """
-    Forwards to either raw_input or input, depending on
-    Python version
+    Forwards to either raw_input or input, depending on Python version
     """
     try:
         return raw_input(prompt)

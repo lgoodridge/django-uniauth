@@ -3,8 +3,9 @@ from django.test import override_settings, RequestFactory, TestCase
 from random import randint
 from tests.utils import assert_urls_equivalent, pretty_str
 from uniauth.utils import choose_username, decode_pk, encode_pk, \
-        get_account_username_split, get_random_username, get_redirect_url, \
-        get_service_url, get_setting, is_tmp_user, DEFAULT_SETTING_VALUES
+        flush_old_tmp_users, get_account_username_split, get_random_username, \
+        get_redirect_url, get_service_url, get_setting, is_tmp_user, \
+        DEFAULT_SETTING_VALUES
 
 
 class ChooseUsernameTests(TestCase):
@@ -55,6 +56,52 @@ class EncodeDecodePkTests(TestCase):
                 self.fail(("Encoding then decoding PK '%d' did not return "
                         "original value.\nEncoded: %s\tDecoded: %s") % \
                         (random_pk, encoded, decoded))
+
+
+class FlushOldTmpUsersTests(TestCase):
+    """
+    Tests the flush_old_tmp_users method in utils.py
+    """
+
+    def setUp(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        self.tmp0 = User.objects.create(username="tmp-0",
+                date_joined=timezone.now()-timedelta(days=0))
+        self.tmp1 = User.objects.create(username="tmp-1",
+                date_joined=timezone.now()-timedelta(days=1))
+        self.tmp2 = User.objects.create(username="tmp-2",
+                date_joined=timezone.now()-timedelta(days=2))
+        self.tmp3 = User.objects.create(username="tmp-3",
+                date_joined=timezone.now()-timedelta(days=3))
+        self.real = User.objects.create(username="a-real-user",
+                date_joined=timezone.now()-timedelta(days=3))
+
+    def test_flush_old_tmp_users_deletes_proper_users(self):
+        """
+        Ensure the proper users are deleted given the days argument
+        """
+        num_deleted = flush_old_tmp_users(days=2)
+        self.assertEqual(num_deleted, 2)
+        remaining_users = User.objects.all()
+        self.assertIn(self.tmp0, remaining_users)
+        self.assertIn(self.tmp1, remaining_users)
+        self.assertNotIn(self.tmp2, remaining_users)
+        self.assertNotIn(self.tmp3, remaining_users)
+        self.assertIn(self.real, remaining_users)
+
+    def test_flush_old_tmp_users_deletes_proper_users(self):
+        """
+        Ensure the function uses a default days parameter if not provided
+        """
+        num_deleted = flush_old_tmp_users()
+        self.assertEqual(num_deleted, 3)
+        remaining_users = User.objects.all()
+        self.assertIn(self.tmp0, remaining_users)
+        self.assertNotIn(self.tmp1, remaining_users)
+        self.assertNotIn(self.tmp2, remaining_users)
+        self.assertNotIn(self.tmp3, remaining_users)
+        self.assertIn(self.real, remaining_users)
 
 
 class GetAccountUsernameSplitTests(TestCase):

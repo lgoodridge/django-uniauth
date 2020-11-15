@@ -170,6 +170,7 @@ Uniauth provides the following management commands:
  - `remove_institution <slug>`: Removes the `Institution` with the provided slug from the database. This action removes any `InstitutionAccounts` for that instiutiton in the process.
  - `migrate_cas <slug>`: Migrates a project originally using CAS for authentication to using Uniauth. See the [User Migration](https://github.com/lgoodridge/django-uniauth#user-migration) section for more information.
  - `migrate_custom`: Migrates a project originally using custom User authentication to using Uniauth. See the [User Migration](https://github.com/lgoodridge/django-uniauth#user-migration) section for more information.
+ - `flush_tmp_users [days]`: Deletes temporary users more than the specified number of days old from the database. The default number of days is 1.
 
 ## Views
 
