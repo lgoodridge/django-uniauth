@@ -8,7 +8,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.http import Http404, HttpResponseBadRequest, \
-        HttpResponseRedirect
+        HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
@@ -16,13 +16,14 @@ from django.urls.exceptions import NoReverseMatch
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
+from rest_framework import status
 from uniauth.decorators import login_required
 from uniauth.forms import AddLinkedEmailForm, ChangePrimaryEmailForm, \
         LinkedEmailActionForm, LoginForm, PasswordChangeForm, \
         PasswordResetForm, SetPasswordForm, SignupForm
 from uniauth.merge import merge_model_instances
 from uniauth.models import Institution, InstitutionAccount, LinkedEmail
-from uniauth.tokens import token_generator
+from uniauth.tokens import token_generator, get_jwt_tokens_for_user
 from uniauth.utils import choose_username, decode_pk, encode_pk, \
         get_account_username_split, get_protocol, get_random_username, \
         get_redirect_url, get_service_url, get_setting, is_tmp_user, \
@@ -76,6 +77,7 @@ def _login_success(request, user, next_url, drop_params=[]):
     not propogated to the destination URL
     """
     query_params = request.GET.copy()
+    jwt_auth = get_setting('UNIAUTH_USE_JWT_AUTH')
 
     # Drop all blacklisted query parameters
     for key in drop_params:
@@ -95,6 +97,10 @@ def _login_success(request, user, next_url, drop_params=[]):
             del query_params[REDIRECT_FIELD_NAME]
         if len(query_params) > 0:
             suffix = '?' + urlencode(query_params)
+        if jwt_auth:
+            refresh, access = get_jwt_tokens_for_user(user)
+            request.session['jwt-refresh'] = refresh
+            request.session['jwt-access'] = access
         return HttpResponseRedirect(next_url + suffix)
 
 
@@ -748,3 +754,15 @@ class PasswordResetVerifyDone(PasswordResetCompleteView):
         context.update(_get_global_context(self.request))
         return context
 
+
+def get_jwt_tokens_from_session(request):
+    if request.method == "GET":
+        refresh = request.session.pop("jwt-refresh", None)
+        access = request.session.pop("jwt-access", None)
+        if refresh is None or access is None:
+            return JsonResponse({}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return JsonResponse({
+                "refresh": refresh,
+                "access": access
+            }, status=status.HTTP_200_OK)

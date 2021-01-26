@@ -2,10 +2,12 @@ from django.contrib.auth.models import User
 from django.core import mail
 from django.http import HttpResponseRedirect
 from django.test import override_settings, RequestFactory, TestCase
+from django.urls import reverse
+import json
 from tests.utils import assert_urls_equivalent
 from uniauth.models import Institution, InstitutionAccount, LinkedEmail
 from uniauth.views import _add_institution_account, _get_global_context, \
-        _login_success, _send_verification_email
+        _login_success, _send_verification_email, get_jwt_tokens_from_session
 
 
 class AddInstitutionAccountTests(TestCase):
@@ -118,6 +120,19 @@ class LoginSuccessTests(TestCase):
         self._run_test("student@inst.edu", {"dead": "beef", "next": "/detour/"},
                 "/next-page/?dead=beef")
 
+    @override_settings(UNIAUTH_USE_JWT_AUTH=True)    
+    def test_login_success_use_jwt_auth(self):
+        user = User.objects.create(username="student@institution.edu")
+
+        self.client.force_login(user)
+        session = self.client.session
+        
+        response = self.client.get(reverse('uniauth:login'))
+     
+        self.assertEqual(type(response), HttpResponseRedirect)
+        self.assertTrue(session['jwt-refresh'])
+        self.assertTrue(session['jwt-access'])
+
 
 class SendVerificationEmail(TestCase):
     """
@@ -154,4 +169,33 @@ class SendVerificationEmail(TestCase):
         self.assertTrue("/verify-token/" in mail.outbox[1].body)
         self.assertEqual(mail.outbox[1].to, ["stud_2@example.edu"])
         self.assertEqual(mail.outbox[1].from_email, "uniauth@testsmtp.ml")
+
+
+class GetJWTTokensFromSession(TestCase):
+    """
+    Tests the get_jwt_tokens_from_session method in views.py
+    """   
+
+    factory = RequestFactory()
+        
+    FAKE_REFRESH_TOKEN = "refresh.token.string"
+    FAKE_ACCESS_TOKEN = "access.token.string" 
+
+
+    def _run_test(self, username, session_state, expected_response_status, expected_response_data):
+        user = User.objects.create(username=username)
+        request = self.factory.get("/jwt-tokens/", data={})
+        request.user = user
+        request.session = session_state
+        response = get_jwt_tokens_from_session(request)
+        self.assertEqual(response.status_code, expected_response_status)
+        self.assertEqual(json.loads(response.content.decode('utf-8')), expected_response_data)
+
+
+    def test_get_jwt_tokens_from_session(self):
+        self._run_test("tmp-c65433", {"jwt-refresh": self.FAKE_REFRESH_TOKEN, "jwt-access": self.FAKE_ACCESS_TOKEN}, 200, {"refresh": self.FAKE_REFRESH_TOKEN, "access": self.FAKE_ACCESS_TOKEN})
+        self._run_test("tmp-a67653", {"jwt-refresh": self.FAKE_REFRESH_TOKEN}, 404, {})
+        self._run_test("tmp-a65343", {"jwt-access": self.FAKE_ACCESS_TOKEN}, 404, {})
+        self._run_test("tmp-a75643", {}, 404, {})
+
 
