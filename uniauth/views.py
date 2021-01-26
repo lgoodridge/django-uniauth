@@ -9,7 +9,7 @@ from django.core.mail import EmailMessage
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.http import Http404, HttpResponseBadRequest, \
         HttpResponseRedirect, JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.urls.exceptions import NoReverseMatch
@@ -756,7 +756,7 @@ class PasswordResetVerifyDone(PasswordResetCompleteView):
 
 
 def get_jwt_tokens_from_session(request):
-    if request.method == "POST":
+    if request.method == "GET":
         refresh = request.session.pop("jwt-refresh", None)
         access = request.session.pop("jwt-access", None)
         if refresh is None or access is None:

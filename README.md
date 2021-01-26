@@ -44,6 +44,7 @@ The app was designed to replace key features of the built-in `django.contrib.aut
  - [Template Customization](https://github.com/lgoodridge/django-uniauth#template-customization)
  - [URLs](https://github.com/lgoodridge/django-uniauth#urls)
  - [User Migration](https://github.com/lgoodridge/django-uniauth#user-migration)
+ - [Using JWT Authentication](https://github.com/lgoodridge/django-uniauth#using-jwt-authentication)
  - [Demo Application](https://github.com/lgoodridge/django-uniauth#demo-application)
  - [Acknowledgements](https://github.com/lgoodridge/django-uniauth#acknowledgements)
 
@@ -107,7 +108,7 @@ The following custom settings are also used:
  - `UNIAUTH_LOGOUT_CAS_COMPLETELY`: Whether to log the user out of CAS on logout if the user originally logged in via CAS. Defaults to `False`.
  - `UNIAUTH_MAX_LINKED_EMAILS`: The maximum number of emails a user can link to their profile. If this value is less than or equal to 0, there is no limit to the number of linked emails. Defaults to 20.
  - `UNIAUTH_PERFORM_RECURSIVE_MERGING`: Whether to attempt to recursively merge One-to-One fields when merging users due to linking two existing accounts together. If `False`, One-to-One fields for the user being linked in will be deleted if the primary user has a non-null value for that field. Defaults to `True`.
- - `UNIAUTH_USE_JWT_AUTH`: In a REST API + UI split architecture, set to `True` to save JWT `refresh` and `access` tokens in session cookie on the domain of the API. Tokens will then be retrievable by UI via `POST` request to `/retrieve-jwt-tokens/`. Defaults to `False`.
+ - `UNIAUTH_USE_JWT_AUTH`: In a REST API + UI split architecture, set to `True` to save JWT `refresh` and `access` tokens in session cookie on the domain of the API. Tokens will then be retrievable by UI via `GET` request to `/jwt-tokens/`. Defaults to `False`.
 
 ## Users in Uniauth
 
@@ -182,7 +183,7 @@ The five views you will likely care about the most are `login`, `logout`, `signu
  - `/signup/`: Prompts user for a primary email address, and a password, then sends a verification email to that address to activate the account.
  - `/password-reset/`: Prompts user for an email address, then sends an email to that address containing a link for resetting the password. If no users have the entered email address linked to their account, no email is sent. If multiple users have that address linked, an email is sent for each potential user.
  - `/settings/`: Allows users to perform account related actions, such as link more email addresses, choose the primary email address, link more Institution Accounts, or change their password.
- - `/retrieve-jwt-tokens/`: In REST API + UI split, allows UI to pop JWT tokens from session cookie on API domain via method `POST`. Returns `404` status if refresh and access tokens are not set.
+ - `/jwt-tokens/`: In REST API + UI split, allows UI to pop JWT tokens from session cookie on API domain via method `GET`. Returns `404` status if refresh and access tokens are not set.
 
 The remaining views are used internally by Uniauth, and should not be linked to from outside the app:
 
@@ -244,9 +245,9 @@ If you wish to use Uniauth with a project that already has users, a `UserProfile
 
 If your project does not fit either of these conditions, you will need to manually migrate the users as appropiate. Please create a `UserProfile` for each user, and `LinkedEmails` or `InstitutionAccounts` as appropiate.
 
-## Using JWT Authentication (API + UI split)
+## Using JWT Authentication
 
-If you wish to use django-uniauth with JWT authentication, you will need the following settings:
+If you wish to use django-uniauth with JWT authentication (API + UI split), you will need to enable [SessionMiddleware](https://docs.djangoproject.com/en/3.1/topics/http/sessions/) in addition to the following settings:
 
 - `UNIAUTH_USE_JWT_AUTH` explicitly set to `True`.
 - `UNIAUTH_LOGIN_REDIRECT_URL` set to any route of your choice to your UI (ex: `http://your-ui-domain.com/`)
@@ -256,7 +257,7 @@ Additionally, you may need the [django-cors-headers](https://pypi.org/project/dj
 - `CORS_ALLOWED_ORIGINS` = `["http://you-ui-domain.com/"]`
 - `CORS_ALLOW_CREDENTIALS` = `True`
 
-On the UI, you can link your login/signup buttons to the respective django-uniauth views. Upon logging in, uniauth will save your JWT tokens in a session cookie on the API's domain. To retrieve and save these tokens, make a `POST` request with `credentials: "include"` and `X-CSRFToken: "your-csrf-token-here"` in the request headers.
+On the UI, you can link your login/signup buttons to the respective django-uniauth views. Upon logging in, uniauth will save your JWT tokens in a session cookie on the API's domain. To retrieve and save these tokens, make a `GET` request with `credentials: "include"` in the request headers.
 
 Please refer to [django-rest-framework-simplejwt](https://pypi.org/project/djangorestframework-simplejwt/4.3.0/) for more information on customizing tokens (i.e. token expiration) and more.
 

@@ -16,5 +16,5 @@ urlpatterns = [
     url(r'^password-reset-done/', views.PasswordResetDone.as_view(), name='password-reset-done'),
     url(r'^password-reset-verify/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,32})/', views.PasswordResetVerify.as_view(), name='password-reset-verify'),
     url(r'^password-reset-verify-done/', views.PasswordResetVerifyDone.as_view(), name='password-reset-verify-done'),
-    url(r'^retrieve-jwt-tokens/', views.get_jwt_tokens_from_session, name="retrieve-jwt-tokens")
+    url(r'^jwt-tokens/', views.get_jwt_tokens_from_session, name="jwt-tokens")
 ]
