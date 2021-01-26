@@ -130,8 +130,8 @@ class LoginSuccessTests(TestCase):
         response = self.client.get(reverse('uniauth:login'))
      
         self.assertEqual(type(response), HttpResponseRedirect)
-        self.assertEqual(type(session['jwt-refresh']), str)
-        self.assertEqual(type(session['jwt-access']), str)
+        self.assertTrue(session['jwt-refresh'])
+        self.assertTrue(session['jwt-access'])
 
 
 class SendVerificationEmail(TestCase):
