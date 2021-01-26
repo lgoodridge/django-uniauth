@@ -19,7 +19,7 @@ setuptools.setup(
     install_requires=[
         "Django>=1.11",
         "python-cas>=1.4.0",
-        "djangorestframework-simplejwt>=4.3.0",
+        "djangorestframework-simplejwt>=4.1.0",
         "PyJWT<=1.7.1"
     ],
     extras_require = {

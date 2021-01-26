@@ -189,7 +189,7 @@ class GetJWTTokensFromSession(TestCase):
         request.session = session_state
         response = get_jwt_tokens_from_session(request)
         self.assertEqual(response.status_code, expected_response_status)
-        self.assertEqual(json.loads(response.content), expected_response_data)
+        self.assertEqual(json.loads(response.content.decode('utf-8')), expected_response_data)
 
 
     def test_get_jwt_tokens_from_session(self):
