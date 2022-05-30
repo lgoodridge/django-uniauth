@@ -16,7 +16,7 @@ The app was designed to replace key features of the built-in `django.contrib.aut
 ## Features
 
  - Supports Python 2.7, 3.5+
- - Supports Django 1.11, 2.x, 3.x
+ - Supports Django 1.11, 2.x, 3.x, 4.x
  - Supports using a [custom User model](https://docs.djangoproject.com/en/2.2/topics/auth/customizing/#specifying-a-custom-user-model)
  - Supports using email addresses as the ["username" field](https://docs.djangoproject.com/en/2.2/topics/auth/customizing/#django.contrib.auth.models.CustomUser.USERNAME_FIELD)
  - Users can link multiple email addresses and use any for authentication
@@ -25,6 +25,8 @@ The app was designed to replace key features of the built-in `django.contrib.aut
 
 ## Major Updates
 
+ - **1.3.1:** Added support for Django 4.x and newer Python versions
+ - **1.3.0:** Added [JWT Support](https://github.com/lgoodridge/django-uniauth#using-jwt-authentication)
  - **1.2.0:** Uniauth `UserProfile` model now backreferenced from the Django `User` model via `user.uniauth_profile` instead of `user.profile`.
 
 ## Tutorials

@@ -4,7 +4,11 @@ from django.contrib.auth import get_user_model, REDIRECT_FIELD_NAME
 from django.shortcuts import resolve_url
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.utils.encoding import force_bytes, force_text
+from django.utils.encoding import force_bytes
+try:
+    from django.utils.encoding import force_text
+except ImportError:
+    from django.utils.encoding import force_str as force_text
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 try:
     from urllib import urlencode

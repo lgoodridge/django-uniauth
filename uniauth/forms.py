@@ -4,7 +4,10 @@ from django.contrib.auth.forms import AuthenticationForm, \
         PasswordChangeForm as AuthPasswordChangeForm, \
         PasswordResetForm as AuthPasswordResetForm, \
         SetPasswordForm as AuthSetPasswordForm, UserCreationForm
-from django.utils.translation import ugettext_lazy as _
+try:
+    from django.utils.translation import ugettext_lazy as _
+except ImportError:
+    from django.utils.translation import gettext_lazy as _
 from uniauth.models import LinkedEmail
 from uniauth.utils import get_setting
 
@@ -152,7 +155,7 @@ class SetPasswordForm(AuthSetPasswordForm):
     entering their old one.
 
     Subclasses the built-in SetPasswordForm, which does
-    most of the heavy living + has several security features.
+    most of the heavy lifting + has several security features.
     """
 
     def clean_new_password1(self):

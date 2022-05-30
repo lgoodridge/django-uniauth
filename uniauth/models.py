@@ -71,7 +71,9 @@ def clear_old_tmp_users(sender, instance, created, **kwargs):
     if created:
         user_model = get_user_model()
         if hasattr(user_model, 'date_joined'):
-            timeout_days = timedelta(days=settings.PASSWORD_RESET_TIMEOUT_DAYS)
+            from uniauth.utils import get_setting
+            timeout_days = timedelta(
+                    days=get_setting("PASSWORD_RESET_TIMEOUT_DAYS"))
             tmp_expire_date = (timezone.now() - timeout_days).replace(
                     hour=0, minute=0, second=0, microsecond=0)
             user_model.objects.filter(username__startswith='tmp-',
