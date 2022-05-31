@@ -1,5 +1,5 @@
 language: python
-dist: xenial
+dist: focal
 
 jobs:
     fast_finish: true
@@ -39,6 +39,9 @@ jobs:
         - { python: "3.10", env: DJANGO=master }
     allow_failures:
         - env: DJANGO=master
+
+before_install:
+    - if [[ $TRAVIS_PYTHON_VERSION == 3.7 ]]; then pip install -U importlib_metadata; fi
 
 install:
     - pip install tox tox-venv tox-travis
