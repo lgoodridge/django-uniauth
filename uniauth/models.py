@@ -167,9 +167,11 @@ class InstitutionAccount(models.Model):
     # The ID used by the CAS server
     cas_id = models.CharField(max_length=30, null=False, blank=False)
 
+    class Meta:
+        unique_together = ('institution', 'cas_id')
+
     def __str__(self):
         try:
             return "%s | %s | account" % (self.profile, self.institution)
         except:
             return "NULL"
-

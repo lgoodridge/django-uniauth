@@ -218,3 +218,20 @@ class InstitutionAccountModelTests(TestCase):
                 cas_id="netid123")
         self.assertEqual(result, account)
 
+    def test_institution_account_uniqueness_constraint(self):
+        """
+        Ensure creating multiple InstitutionAccounts with the same
+        institution and cas_id fails
+        """
+        user1 = User.objects.create(username="new-user")
+        user2 = User.objects.create(username="other-user")
+        institution = Institution.objects.create(name="Test Inst",
+                slug="test-inst", cas_server_url="https://fed.example.edu/")
+        cas_id = "netid123"
+        InstitutionAccount.objects.create(
+                profile=user1.uniauth_profile,
+                institution=institution, cas_id=cas_id)
+        with self.assertRaises(IntegrityError):
+            InstitutionAccount.objects.create(
+                    profile=user2.uniauth_profile,
+                    institution=institution, cas_id=cas_id)

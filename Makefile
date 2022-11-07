@@ -12,6 +12,11 @@ install:
 	pip install -r requirements.txt
 	pip install tox
 
+# Create migrations
+# Requires having the demo_app set up
+migrations:
+	cd demo_app; python manage.py makemigrations
+
 # Run all tests
 test:
 	tox
