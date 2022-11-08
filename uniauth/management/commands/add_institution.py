@@ -8,41 +8,50 @@ from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
 from django.core.validators import URLValidator
 from django.utils.text import slugify
+
 from uniauth.models import Institution
+
 
 class Command(BaseCommand):
     help = "Adds an institution to the database."
 
     def add_arguments(self, parser):
-        parser.add_argument('name')
-        parser.add_argument('cas_server_url')
+        parser.add_argument("name")
+        parser.add_argument("cas_server_url")
         parser.add_argument(
-            '--update-existing',
-            action='store_true',
+            "--update-existing",
+            action="store_true",
             default=False,
-            help='Update the institution, if it already exists.')
+            help="Update the institution, if it already exists.",
+        )
 
     def handle(self, *args, **options):
-        slug = slugify(options['name'])
-        cas_server_url = options['cas_server_url']
+        slug = slugify(options["name"])
+        cas_server_url = options["cas_server_url"]
 
-        if (not options['update_existing']
-            and Institution.objects.filter(slug=slug).exists()):
-            raise CommandError("An institution with slug '" +
-                        slug + "' already exists.")
+        if (
+            not options["update_existing"]
+            and Institution.objects.filter(slug=slug).exists()
+        ):
+            raise CommandError(
+                "An institution with slug '" + slug + "' already exists."
+            )
 
         try:
             validator = URLValidator()
-            validator(options['cas_server_url'])
+            validator(options["cas_server_url"])
         except ValidationError:
-            raise CommandError("Provided CAS server URL '" +
-                    cas_server_url + "' is malformed.")
-      
-        institution, created = Institution.objects.get_or_create(
-            name=options['name'],
-            slug=slug,
-            defaults={'cas_server_url': cas_server_url}
+            raise CommandError(
+                "Provided CAS server URL '"
+                + cas_server_url
+                + "' is malformed."
             )
+
+        institution, created = Institution.objects.get_or_create(
+            name=options["name"],
+            slug=slug,
+            defaults={"cas_server_url": cas_server_url},
+        )
 
         if created:
             self.stdout.write("Created institution '%s'.\n" % str(institution))

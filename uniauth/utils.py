@@ -1,17 +1,22 @@
 from datetime import timedelta
+
 from django.conf import settings
-from django.contrib.auth import get_user_model, REDIRECT_FIELD_NAME
+from django.contrib.auth import REDIRECT_FIELD_NAME, get_user_model
 from django.shortcuts import resolve_url
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import force_bytes
+
 try:
     from django.utils.encoding import force_text
 except ImportError:
     from django.utils.encoding import force_str as force_text
+
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+
 try:
     from urllib import urlencode
+
     from urlparse import urlunparse
 except ImportError:
     from urllib.parse import urlencode, urlunparse
@@ -19,19 +24,19 @@ except ImportError:
 
 # The default value for all settings used by Uniauth
 DEFAULT_SETTING_VALUES = {
-    'LOGIN_URL': '/accounts/login/',
-    'PASSWORD_RESET_TIMEOUT_DAYS': 3,
-    'UNIAUTH_ALLOW_STANDALONE_ACCOUNTS': True,
-    'UNIAUTH_ALLOW_SHARED_EMAILS': True,
-    'UNIAUTH_FROM_EMAIL': 'uniauth@example.com',
-    'UNIAUTH_LOGIN_DISPLAY_STANDARD': True,
-    'UNIAUTH_LOGIN_DISPLAY_CAS': True,
-    'UNIAUTH_LOGIN_REDIRECT_URL': '/',
-    'UNIAUTH_LOGOUT_CAS_COMPLETELY': False,
-    'UNIAUTH_LOGOUT_REDIRECT_URL': None,
-    'UNIAUTH_MAX_LINKED_EMAILS': 20,
-    'UNIAUTH_PERFORM_RECURSIVE_MERGING': True,
-    'UNIAUTH_USE_JWT_AUTH': False
+    "LOGIN_URL": "/accounts/login/",
+    "PASSWORD_RESET_TIMEOUT_DAYS": 3,
+    "UNIAUTH_ALLOW_STANDALONE_ACCOUNTS": True,
+    "UNIAUTH_ALLOW_SHARED_EMAILS": True,
+    "UNIAUTH_FROM_EMAIL": "uniauth@example.com",
+    "UNIAUTH_LOGIN_DISPLAY_STANDARD": True,
+    "UNIAUTH_LOGIN_DISPLAY_CAS": True,
+    "UNIAUTH_LOGIN_REDIRECT_URL": "/",
+    "UNIAUTH_LOGOUT_CAS_COMPLETELY": False,
+    "UNIAUTH_LOGOUT_REDIRECT_URL": None,
+    "UNIAUTH_MAX_LINKED_EMAILS": 20,
+    "UNIAUTH_PERFORM_RECURSIVE_MERGING": True,
+    "UNIAUTH_USE_JWT_AUTH": False,
 }
 
 
@@ -42,11 +47,13 @@ def choose_username(email):
     Sets the username to the email parameter umodified if
     possible, otherwise adds a numerical suffix to the email.
     """
+
     def get_suffix(number):
-        return "" if number == 1 else "_"+str(number).zfill(3)
+        return "" if number == 1 else "_" + str(number).zfill(3)
+
     user_model = get_user_model()
     num = 1
-    while user_model.objects.filter(username=email+get_suffix(num)).exists():
+    while user_model.objects.filter(username=email + get_suffix(num)).exists():
         num += 1
     return email + get_suffix(num)
 
@@ -81,7 +88,7 @@ def flush_old_tmp_users(days=1):
     user_model = get_user_model()
     old_tmp_users = user_model.objects.filter(
         username__startswith="tmp-",
-        date_joined__lte=timezone.now()-timedelta(days=days)
+        date_joined__lte=timezone.now() - timedelta(days=days),
     )
     num_deleted = old_tmp_users.count()
     old_tmp_users.delete()
@@ -98,10 +105,12 @@ def get_account_username_split(username):
     """
     username_split = username.split("-")
     if len(username_split) < 3:
-        raise ValueError("Value passed to get_account_username_split " +
-                "was not the username for an unlinked InstitutionAccount.")
-    slug = "-".join(username_split[1:len(username_split)-1])
-    return (username_split[0], slug, username_split[len(username_split)-1])
+        raise ValueError(
+            "Value passed to get_account_username_split "
+            + "was not the username for an unlinked InstitutionAccount."
+        )
+    slug = "-".join(username_split[1 : len(username_split) - 1])
+    return (username_split[0], slug, username_split[len(username_split) - 1])
 
 
 def get_input(prompt):
@@ -118,15 +127,17 @@ def get_protocol(request):
     """
     Returns the protocol request is using ('http' | 'https')
     """
-    return 'https' if request.is_secure() else 'http'
+    return "https" if request.is_secure() else "http"
 
 
 def get_random_username():
     """
     Returns a username generated from current timestamp + random string
     """
-    return "tmp-%s_%s" % (timezone.now().strftime("%Y%m%d%H%M%S%f"),
-            get_random_string(5))
+    return "tmp-%s_%s" % (
+        timezone.now().strftime("%Y%m%d%H%M%S%f"),
+        get_random_string(5),
+    )
 
 
 def get_redirect_url(request, use_referer=False, default_url=None):
@@ -143,15 +154,16 @@ def get_redirect_url(request, use_referer=False, default_url=None):
     redirect_url = request.GET.get(REDIRECT_FIELD_NAME)
     if not redirect_url:
         if use_referer:
-            redirect_url = request.META.get('HTTP_REFERER')
+            redirect_url = request.META.get("HTTP_REFERER")
         if not redirect_url:
-            redirect_url = resolve_url(default_url or
-                    get_setting('UNIAUTH_LOGIN_REDIRECT_URL'))
+            redirect_url = resolve_url(
+                default_url or get_setting("UNIAUTH_LOGIN_REDIRECT_URL")
+            )
         prefix = urlunparse(
-                (get_protocol(request), request.get_host(), '', '', '', ''),
+            (get_protocol(request), request.get_host(), "", "", "", ""),
         )
         if redirect_url.startswith(prefix):
-            redirect_url = redirect_url[len(prefix):]
+            redirect_url = redirect_url[len(prefix) :]
     return redirect_url
 
 
@@ -164,16 +176,16 @@ def get_service_url(request, redirect_url=None):
     to the value of get_redirect_url(request).
     """
     service_url = urlunparse(
-            (get_protocol(request), request.get_host(),
-            request.path, '', '', ''),
+        (get_protocol(request), request.get_host(), request.path, "", "", ""),
     )
     query_params = request.GET.copy()
-    query_params[REDIRECT_FIELD_NAME] = redirect_url or \
-            get_redirect_url(request)
+    query_params[REDIRECT_FIELD_NAME] = redirect_url or get_redirect_url(
+        request
+    )
     # The CAS server may have added the ticket as an extra query
     # parameter upon checking the credentials - ensure it is ignored
-    query_params.pop('ticket', None)
-    service_url += '?' + urlencode(query_params)
+    query_params.pop("ticket", None)
+    service_url += "?" + urlencode(query_params)
     return service_url
 
 
@@ -200,9 +212,13 @@ def is_tmp_user(user):
     False, it includes Institution Account logins (such as
     CAS) that have not been linked to a Uniauth profile yet.
     """
-    return user.username and (user.username.startswith('tmp-') or \
-            (not get_setting('UNIAUTH_ALLOW_STANDALONE_ACCOUNTS') and \
-                    is_unlinked_account(user)))
+    return user.username and (
+        user.username.startswith("tmp-")
+        or (
+            not get_setting("UNIAUTH_ALLOW_STANDALONE_ACCOUNTS")
+            and is_unlinked_account(user)
+        )
+    )
 
 
 def is_unlinked_account(user):
@@ -210,4 +226,4 @@ def is_unlinked_account(user):
     Returns whether the provided user has authenticated via
     an InstitutionAccount not yet linked to a Uniauth profile.
     """
-    return user.username and user.username.startswith('cas-')
+    return user.username and user.username.startswith("cas-")

@@ -5,12 +5,23 @@ ENV?=
 clean:
 	rm -f *.pyc
 
+# Formats the code with black and isort
+format:
+	python3.10 -m isort uniauth/
+	python3.10 -m black uniauth/
+
 # Perform initial developer setup
 # You will still need to setup tox to work with multiple
 # python environements, perhaps with pyenv
 install:
 	pip install -r requirements.txt
 	pip install tox
+
+# Install formatting tools in python3.10 environment
+# Requires having python3.10 setup, perhaps with pyenv
+install-formatter:
+	pip3.10 install black
+	pip3.10 install isort
 
 # Create migrations
 # Requires having the demo_app set up

@@ -2,6 +2,7 @@ from cas import CASClient
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 from django.db.models import Q
+
 from uniauth.models import InstitutionAccount, UserProfile
 from uniauth.utils import is_tmp_user
 
@@ -19,13 +20,16 @@ class CASBackend(ModelBackend):
         user_model = get_user_model()
 
         # Attempt to verify the ticket with the institution's CAS server
-        client = CASClient(version=2, service_url=service,
-                server_url=institution.cas_server_url)
+        client = CASClient(
+            version=2,
+            service_url=service,
+            server_url=institution.cas_server_url,
+        )
         username, attributes, pgtiou = client.verify_ticket(ticket)
 
         # Add the attributes returned by the CAS server to the session
         if request and attributes:
-            request.session['attributes'] = attributes
+            request.session["attributes"] = attributes
 
         # If no username was returned, verification failed
         if not username:
@@ -34,8 +38,9 @@ class CASBackend(ModelBackend):
         # Attempt to find a user possessing an account
         # with that username for the institution
         try:
-            user = InstitutionAccount.objects.get(cas_id=username,
-                    institution=institution).profile.user
+            user = InstitutionAccount.objects.get(
+                cas_id=username, institution=institution
+            ).profile.user
         except InstitutionAccount.DoesNotExist:
             user = None
 
@@ -44,7 +49,8 @@ class CASBackend(ModelBackend):
         if not user:
             temp_username = "cas-%s-%s" % (institution.slug, username)
             user, created = user_model._default_manager.get_or_create(
-                    **{user_model.USERNAME_FIELD: temp_username})
+                **{user_model.USERNAME_FIELD: temp_username}
+            )
 
         return user
 
@@ -67,8 +73,8 @@ class LinkedEmailBackend(ModelBackend):
         address matching the provided email value
         """
         return user_model._default_manager.filter(
-                uniauth_profile__linked_emails__address__iexact=email,
-                uniauth_profile__linked_emails__is_verified=True
+            uniauth_profile__linked_emails__address__iexact=email,
+            uniauth_profile__linked_emails__is_verified=True,
         ).all()
 
     def authenticate(self, request, email=None, password=None, **kwargs):
@@ -77,9 +83,9 @@ class LinkedEmailBackend(ModelBackend):
         # If email field was not provided, check for
         # alternative names, or for a "username" field
         if email is None:
-            email = kwargs.get('email_address')
+            email = kwargs.get("email_address")
             if email is None:
-                email = kwargs.get('username')
+                email = kwargs.get("username")
 
                 # If a custom user model is being used, check for
                 # the email in the specified username field
@@ -115,9 +121,11 @@ class UsernameOrLinkedEmailBackend(LinkedEmailBackend):
         email address matching the provided username value
         """
         username_field = user_model.USERNAME_FIELD
-        matched_users =  user_model._default_manager.filter(
-                (Q(**{username_field: username})) |
-                (Q(uniauth_profile__linked_emails__address__iexact=username) &
-                    Q(uniauth_profile__linked_emails__is_verified=True))
+        matched_users = user_model._default_manager.filter(
+            (Q(**{username_field: username}))
+            | (
+                Q(uniauth_profile__linked_emails__address__iexact=username)
+                & Q(uniauth_profile__linked_emails__is_verified=True)
+            )
         ).all()
         return filter(lambda x: not is_tmp_user(x), matched_users)

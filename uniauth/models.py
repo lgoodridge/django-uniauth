@@ -1,4 +1,5 @@
 from datetime import timedelta
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -15,9 +16,12 @@ class UserProfile(models.Model):
     """
 
     # User this profile is extending
-    user = models.OneToOneField(get_user_model(),
-            related_name='uniauth_profile',
-            on_delete=models.CASCADE, null=False)
+    user = models.OneToOneField(
+        get_user_model(),
+        related_name="uniauth_profile",
+        on_delete=models.CASCADE,
+        null=False,
+    )
 
     def get_display_id(self):
         """
@@ -33,8 +37,9 @@ class UserProfile(models.Model):
         username = self.user.username
         if "@" in username:
             return username.split("@")[0]
-        if username.startswith('cas-'):
+        if username.startswith("cas-"):
             from uniauth.utils import get_account_username_split
+
             return get_account_username_split(username)[-1]
         return username
 
@@ -56,8 +61,9 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
         profile = UserProfile.objects.create(user=instance)
         if profile and instance.email:
-            LinkedEmail.objects.create(profile=profile,
-                    address=instance.email, is_verified=True)
+            LinkedEmail.objects.create(
+                profile=profile, address=instance.email, is_verified=True
+            )
 
 
 @receiver(post_save, sender=get_user_model())
@@ -70,14 +76,18 @@ def clear_old_tmp_users(sender, instance, created, **kwargs):
     """
     if created:
         user_model = get_user_model()
-        if hasattr(user_model, 'date_joined'):
+        if hasattr(user_model, "date_joined"):
             from uniauth.utils import get_setting
+
             timeout_days = timedelta(
-                    days=get_setting("PASSWORD_RESET_TIMEOUT_DAYS"))
+                days=get_setting("PASSWORD_RESET_TIMEOUT_DAYS")
+            )
             tmp_expire_date = (timezone.now() - timeout_days).replace(
-                    hour=0, minute=0, second=0, microsecond=0)
-            user_model.objects.filter(username__startswith='tmp-',
-                    date_joined__lt=tmp_expire_date).delete()
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            user_model.objects.filter(
+                username__startswith="tmp-", date_joined__lt=tmp_expire_date
+            ).delete()
 
 
 class LinkedEmail(models.Model):
@@ -86,8 +96,12 @@ class LinkedEmail(models.Model):
     """
 
     # Person owning this email
-    profile = models.ForeignKey('UserProfile', related_name='linked_emails',
-            on_delete=models.CASCADE, null=False)
+    profile = models.ForeignKey(
+        "UserProfile",
+        related_name="linked_emails",
+        on_delete=models.CASCADE,
+        null=False,
+    )
 
     # The email address
     address = models.EmailField(null=False, blank=False)
@@ -106,18 +120,28 @@ class LinkedEmail(models.Model):
         from uniauth.utils import get_setting
 
         # Check for shared emails if necessary
-        if not get_setting('UNIAUTH_ALLOW_SHARED_EMAILS') and \
-                LinkedEmail.objects.filter(address=self.address,
-                        is_verified=True) and self.is_verified:
-            raise ValidationError("This email address has already been " +
-                    "linked to another account.")
+        if (
+            not get_setting("UNIAUTH_ALLOW_SHARED_EMAILS")
+            and LinkedEmail.objects.filter(
+                address=self.address, is_verified=True
+            )
+            and self.is_verified
+        ):
+            raise ValidationError(
+                "This email address has already been "
+                + "linked to another account."
+            )
 
         # Ensure a user doesn't link more than the maximum
-        max_linked_emails = get_setting('UNIAUTH_MAX_LINKED_EMAILS')
-        if max_linked_emails > 0 and \
-                self.profile.linked_emails.count() >= max_linked_emails:
-            raise ValidationError(("You can not link more than %d emails "
-                "to your account.") % max_linked_emails)
+        max_linked_emails = get_setting("UNIAUTH_MAX_LINKED_EMAILS")
+        if (
+            max_linked_emails > 0
+            and self.profile.linked_emails.count() >= max_linked_emails
+        ):
+            raise ValidationError(
+                ("You can not link more than %d emails " "to your account.")
+                % max_linked_emails
+            )
         super(LinkedEmail, self).clean()
 
     def __str__(self):
@@ -137,8 +161,9 @@ class Institution(models.Model):
     name = models.CharField(max_length=30, null=False, blank=False)
 
     # Slugified version of name
-    slug = models.CharField(max_length=30, null=False, blank=False,
-            unique=True)
+    slug = models.CharField(
+        max_length=30, null=False, blank=False, unique=True
+    )
 
     # CAS server location
     cas_server_url = models.URLField(null=False, blank=False)
@@ -157,18 +182,26 @@ class InstitutionAccount(models.Model):
     """
 
     # The person the account is for
-    profile = models.ForeignKey('UserProfile', related_name='accounts',
-            on_delete=models.CASCADE, null=False)
+    profile = models.ForeignKey(
+        "UserProfile",
+        related_name="accounts",
+        on_delete=models.CASCADE,
+        null=False,
+    )
 
     # The institution the account is with
-    institution = models.ForeignKey('Institution', related_name='accounts',
-            on_delete=models.CASCADE, null=False)
+    institution = models.ForeignKey(
+        "Institution",
+        related_name="accounts",
+        on_delete=models.CASCADE,
+        null=False,
+    )
 
     # The ID used by the CAS server
     cas_id = models.CharField(max_length=30, null=False, blank=False)
 
     class Meta:
-        unique_together = ('institution', 'cas_id')
+        unique_together = ("institution", "cas_id")
 
     def __str__(self):
         try:

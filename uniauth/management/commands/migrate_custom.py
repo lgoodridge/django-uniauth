@@ -5,25 +5,29 @@ custom User authentication over to Uniauth.
 Execution: python manage.py migrate_custom
 """
 
-from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
+from django.db import transaction
+
 from uniauth.models import LinkedEmail, UserProfile
 from uniauth.utils import get_input
+
 
 class Command(BaseCommand):
     help = "Migrates a project using custom User auhentication to Uniauth."
 
     @transaction.atomic
     def handle(self, *args, **options):
-        message = ("This command is intended to migrate projects "
+        message = (
+            "This command is intended to migrate projects "
             "previously using custom User authentication to using Uniauth.\n\n"
             "You should only proceed with this command if your project had "
             "users sign up with a username / email address and password. This "
             "command will create UserProfile for each user with a username or "
             "email address, and a non-blank password. A verified LinkedEmail "
             "will also be created if the email field is non-blank.\n\n"
-            "Do you still wish to continue?\n\nAnswer [y/n]: ")
+            "Do you still wish to continue?\n\nAnswer [y/n]: "
+        )
         answer = get_input(message)
 
         if answer != "y" and answer != "yes":
@@ -43,10 +47,13 @@ class Command(BaseCommand):
             # Add the profile + LinkedEmail if email field is non-blank
             profile = UserProfile.objects.create(user=user)
             if user.email:
-                LinkedEmail.objects.create(profile=profile, address=user.email,
-                        is_verified=True)
+                LinkedEmail.objects.create(
+                    profile=profile, address=user.email, is_verified=True
+                )
         self.stdout.write("Done!\n")
 
         if len(skipped) > 0:
-            self.stdout.write("\nThe following users could not be " +
-                    "migrated: %s\n" % str(skipped))
+            self.stdout.write(
+                "\nThe following users could not be "
+                + "migrated: %s\n" % str(skipped)
+            )
