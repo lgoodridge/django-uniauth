@@ -5,7 +5,7 @@ with open("README.md", "r") as readme:
 
 setuptools.setup(
     name="django-uniauth",
-    version="1.3.2",
+    version="1.4.0",
     author="Lance Goodridge",
     author_email="ldgoodridge95@gmail.com",
     keywords=["django", "auth", "authentication", "cas", "sso", "single sign-on"],
@@ -20,7 +20,6 @@ setuptools.setup(
         "Django>=1.11",
         "python-cas>=1.4.0",
         "djangorestframework-simplejwt>=4.1.0",
-        "PyJWT<=1.7.1"
     ],
     extras_require = {
         ":python_version<='3.2'": ["mock"],

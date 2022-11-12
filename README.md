@@ -25,6 +25,7 @@ The app was designed to replace key features of the built-in `django.contrib.aut
 
 ## Major Updates
 
+ - **1.4.0:** Added support for custom JWT token serializers
  - **1.3.1:** Added support for Django 4.x and newer Python versions
  - **1.3.0:** Added [JWT Support](https://github.com/lgoodridge/django-uniauth#using-jwt-authentication)
  - **1.2.0:** Uniauth `UserProfile` model now backreferenced from the Django `User` model via `user.uniauth_profile` instead of `user.profile`.
@@ -259,7 +260,9 @@ Additionally, you may need the [django-cors-headers](https://pypi.org/project/dj
 - `CORS_ALLOWED_ORIGINS` = `["http://you-ui-domain.com/"]`
 - `CORS_ALLOW_CREDENTIALS` = `True`
 
-On the UI, you can link your login/signup buttons to the respective django-uniauth views. Upon logging in, uniauth will save your JWT tokens in a session cookie on the API's domain. To retrieve and save these tokens, make a `GET` request with `credentials: "include"` in the request headers.
+On the UI, you can link your login/signup buttons to the respective django-uniauth views. Upon logging in, Uniauth will save your JWT tokens in a session cookie on the API's domain. To retrieve and save these tokens, make a `GET` request with `credentials: "include"` in the request headers.
+
+If you have created a [TokenObtainPairSerializer subclass](https://django-rest-framework-simplejwt.readthedocs.io/en/latest/customizing_token_claims.html) for customizing token claims, set the `TOKEN_OBTAIN_SERIALIZER` simplejwt setting accordingly, and Uniauth will use the custom serializer for its JWT tokens as well.
 
 Please refer to [django-rest-framework-simplejwt](https://pypi.org/project/djangorestframework-simplejwt/4.3.0/) for more information on customizing tokens (i.e. token expiration) and more.
 

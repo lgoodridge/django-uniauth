@@ -1,4 +1,3 @@
 mock==2.0.0; python_version < "3.3"
-python-cas==1.4.0
+python-cas>=1.4.0
 djangorestframework-simplejwt>=4.1.0
-PyJWT<=1.7.1
