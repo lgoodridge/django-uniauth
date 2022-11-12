@@ -1,4 +1,5 @@
-from django.test import override_settings, TestCase
+from django.test import TestCase, override_settings
+
 
 class SimpleTestCase(TestCase):
     """
@@ -16,9 +17,11 @@ class SimpleTestCase(TestCase):
         """
         Ensure we can import uniauth + third party dependencies
         """
-        from uniauth.models import UserProfile
-        from cas import CASClient
         import requests
+        from cas import CASClient
+
+        from uniauth.models import UserProfile
+
         user = UserProfile()
         self.assertTrue(user is not None)
 
@@ -28,8 +31,8 @@ class SimpleTestCase(TestCase):
         Ensure the test settings module works as expected
         """
         from django.conf import settings
+
         self.assertTrue(settings.TESTING)
         self.assertEqual(settings.LOGIN_URL, "/simple/login/")
         with self.settings(UNIAUTH_LOGIN_DISPLAY_STANDARD=False):
             self.assertFalse(settings.UNIAUTH_LOGIN_DISPLAY_STANDARD)
-

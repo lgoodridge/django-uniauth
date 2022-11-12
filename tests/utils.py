@@ -1,5 +1,6 @@
-from contextlib import contextmanager
 import json
+from contextlib import contextmanager
+
 try:
     from urlparse import parse_qs, urlparse
 except ImportError:

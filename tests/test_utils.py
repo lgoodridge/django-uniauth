@@ -1,11 +1,22 @@
-from django.contrib.auth.models import AnonymousUser, User
-from django.test import override_settings, RequestFactory, TestCase
 from random import randint
+
+from django.contrib.auth.models import AnonymousUser, User
+from django.test import RequestFactory, TestCase, override_settings
+
 from tests.utils import assert_urls_equivalent, pretty_str
-from uniauth.utils import choose_username, decode_pk, encode_pk, \
-        flush_old_tmp_users, get_account_username_split, get_random_username, \
-        get_redirect_url, get_service_url, get_setting, is_tmp_user, \
-        DEFAULT_SETTING_VALUES
+from uniauth.utils import (
+    DEFAULT_SETTING_VALUES,
+    choose_username,
+    decode_pk,
+    encode_pk,
+    flush_old_tmp_users,
+    get_account_username_split,
+    get_random_username,
+    get_redirect_url,
+    get_service_url,
+    get_setting,
+    is_tmp_user,
+)
 
 
 class ChooseUsernameTests(TestCase):
@@ -18,14 +29,14 @@ class ChooseUsernameTests(TestCase):
         Ensure that all outputted usernames are unique
         """
         emails = [
-                "fakeemail@example.com",
-                "abcde@fgh.com",
-                "abcd@gh.com",
-                "abce@gh.com",
-                "abce@gh.ijk",
-                "repeat@gmail.com",
-                "repeat@gmail.com",
-                "repeat@gmail.com",
+            "fakeemail@example.com",
+            "abcde@fgh.com",
+            "abcd@gh.com",
+            "abce@gh.com",
+            "abce@gh.ijk",
+            "repeat@gmail.com",
+            "repeat@gmail.com",
+            "repeat@gmail.com",
         ]
         usernames = []
         for email in emails:
@@ -33,9 +44,13 @@ class ChooseUsernameTests(TestCase):
             usernames.append(username)
             User.objects.create(username=username, email=email)
         if len(set(usernames)) != len(emails):
-            zip_str = pretty_str([x+": "+y for x,y in zip(emails, usernames)])
-            self.fail("choose_username outputted a duplicate username.\n"
-                    "Emails vs Usernames: %s" % zip_str)
+            zip_str = pretty_str(
+                [x + ": " + y for x, y in zip(emails, usernames)]
+            )
+            self.fail(
+                "choose_username outputted a duplicate username.\n"
+                "Emails vs Usernames: %s" % zip_str
+            )
 
 
 class EncodeDecodePkTests(TestCase):
@@ -53,9 +68,13 @@ class EncodeDecodePkTests(TestCase):
             encoded = encode_pk(random_pk)
             decoded = decode_pk(encoded)
             if str(random_pk) != decoded:
-                self.fail(("Encoding then decoding PK '%d' did not return "
-                        "original value.\nEncoded: %s\tDecoded: %s") % \
-                        (random_pk, encoded, decoded))
+                self.fail(
+                    (
+                        "Encoding then decoding PK '%d' did not return "
+                        "original value.\nEncoded: %s\tDecoded: %s"
+                    )
+                    % (random_pk, encoded, decoded)
+                )
 
 
 class FlushOldTmpUsersTests(TestCase):
@@ -65,17 +84,25 @@ class FlushOldTmpUsersTests(TestCase):
 
     def setUp(self):
         from datetime import timedelta
+
         from django.utils import timezone
-        self.tmp0 = User.objects.create(username="tmp-0",
-                date_joined=timezone.now()-timedelta(days=0))
-        self.tmp1 = User.objects.create(username="tmp-1",
-                date_joined=timezone.now()-timedelta(days=1))
-        self.tmp2 = User.objects.create(username="tmp-2",
-                date_joined=timezone.now()-timedelta(days=2))
-        self.tmp3 = User.objects.create(username="tmp-3",
-                date_joined=timezone.now()-timedelta(days=3))
-        self.real = User.objects.create(username="a-real-user",
-                date_joined=timezone.now()-timedelta(days=3))
+
+        self.tmp0 = User.objects.create(
+            username="tmp-0", date_joined=timezone.now() - timedelta(days=0)
+        )
+        self.tmp1 = User.objects.create(
+            username="tmp-1", date_joined=timezone.now() - timedelta(days=1)
+        )
+        self.tmp2 = User.objects.create(
+            username="tmp-2", date_joined=timezone.now() - timedelta(days=2)
+        )
+        self.tmp3 = User.objects.create(
+            username="tmp-3", date_joined=timezone.now() - timedelta(days=3)
+        )
+        self.real = User.objects.create(
+            username="a-real-user",
+            date_joined=timezone.now() - timedelta(days=3),
+        )
 
     def test_flush_old_tmp_users_deletes_proper_users(self):
         """
@@ -113,6 +140,7 @@ class GetAccountUsernameSplitTests(TestCase):
         """
         Ensure it works for unlinked InstitutionAccount users
         """
+
         def _run_test(username, expected_result):
             result = get_account_username_split(username)
             self.assertEqual(result[0], expected_result[0])
@@ -121,8 +149,10 @@ class GetAccountUsernameSplitTests(TestCase):
 
         _run_test("cas-princeton-netid", ("cas", "princeton", "netid"))
         _run_test("exauth-exinst-exid", ("exauth", "exinst", "exid"))
-        _run_test("ab_c-long-dashed-slug-id123",
-                ("ab_c", "long-dashed-slug", "id123"))
+        _run_test(
+            "ab_c-long-dashed-slug-id123",
+            ("ab_c", "long-dashed-slug", "id123"),
+        )
         _run_test("a-b-c", ("a", "b", "c"))
         _run_test("aa-aa-aa", ("aa", "aa", "aa"))
 
@@ -130,12 +160,15 @@ class GetAccountUsernameSplitTests(TestCase):
         """
         Ensure it fails as expected for non unlinked account users
         """
+
         def _run_test(username):
             try:
                 result = get_account_username_split(username)
-                self.fail("get_account_username_split did not raise an "
-                        "exception when provided username for a non unlinked "
-                        "Institution.\n'%s' returned '%s'" % (username, result))
+                self.fail(
+                    "get_account_username_split did not raise an "
+                    "exception when provided username for a non unlinked "
+                    "Institution.\n'%s' returned '%s'" % (username, result)
+                )
             except ValueError:
                 pass
 
@@ -157,8 +190,10 @@ class GetRandomUsernameTests(TestCase):
         for i in range(100):
             username = get_random_username()
             if not username.startswith("tmp"):
-                self.fail("get_random_username outputted a username that "
-                        "did not start with 'tmp_': %s" % username)
+                self.fail(
+                    "get_random_username outputted a username that "
+                    "did not start with 'tmp_': %s" % username
+                )
 
     def test_get_random_username_unique(self):
         """
@@ -168,8 +203,10 @@ class GetRandomUsernameTests(TestCase):
         for i in range(100):
             username = get_random_username()
             if username in usernames:
-                self.fail("get_random_username outputted a duplicate "
-                        "username: %s" % username)
+                self.fail(
+                    "get_random_username outputted a duplicate "
+                    "username: %s" % username
+                )
             usernames.append(username)
 
 
@@ -185,8 +222,9 @@ class GetRedirectUrlTests(TestCase):
         Ensure method returns URL provided as query parameter
         over everything else if present
         """
-        request = self.factory.get("/accounts/login/",
-                data={"next": "/next-page/"})
+        request = self.factory.get(
+            "/accounts/login/", data={"next": "/next-page/"}
+        )
         result = get_redirect_url(request)
         self.assertEqual(result, "/next-page/")
 
@@ -195,10 +233,12 @@ class GetRedirectUrlTests(TestCase):
         Ensure method returns the referring page if use_referer
         is True, and no relevant query parameter was provided
         """
-        request = self.factory.get("/accounts/cas-login/test-inst/",
-                HTTP_REFERER="/home/")
-        result = get_redirect_url(request, use_referer=True,
-                default_url="/default/")
+        request = self.factory.get(
+            "/accounts/cas-login/test-inst/", HTTP_REFERER="/home/"
+        )
+        result = get_redirect_url(
+            request, use_referer=True, default_url="/default/"
+        )
         self.assertEqual(result, "/home/")
 
     def test_get_redirect_url_defaults(self):
@@ -207,8 +247,9 @@ class GetRedirectUrlTests(TestCase):
         login URL setting if no other options are available
         """
         request = self.factory.get("/accounts/login/", HTTP_REFERER="/home")
-        result = get_redirect_url(request, use_referer=False,
-                default_url="/default/")
+        result = get_redirect_url(
+            request, use_referer=False, default_url="/default/"
+        )
         self.assertEqual(result, "/default/")
 
         request = self.factory.get("/accounts/login/", HTTP_REFERER="/home")
@@ -229,8 +270,9 @@ class GetServiceUrlTests(TestCase):
         Ensure method behaves properly when redirect_url
         is or is not provided
         """
-        request = self.factory.get("/accounts/login/",
-                data={"next": "/next-page/"})
+        request = self.factory.get(
+            "/accounts/login/", data={"next": "/next-page/"}
+        )
 
         result = get_service_url(request)
         expected = "http://testserver/accounts/login/?next=%2Fnext-page%2F"
@@ -249,23 +291,36 @@ class GetServiceUrlTests(TestCase):
         expected = "https://testserver/origin/?foo=bar&next=%2Ftarget%2F"
         assert_urls_equivalent(result, expected, self.assertEqual)
 
-        request = self.factory.get("/origin/", secure=True,
-                data={"foo": "bar", "next": "/next-page/?cat=dog"})
+        request = self.factory.get(
+            "/origin/",
+            secure=True,
+            data={"foo": "bar", "next": "/next-page/?cat=dog"},
+        )
         result = get_service_url(request)
-        expected = ("https://testserver/origin/?foo=bar"
-                "&next=%2Fnext-page%2F%3Fcat%3Ddog")
+        expected = (
+            "https://testserver/origin/?foo=bar"
+            "&next=%2Fnext-page%2F%3Fcat%3Ddog"
+        )
         assert_urls_equivalent(result, expected, self.assertEqual)
 
     def test_get_service_url_ignore_ticket(self):
         """
         Ensures ticket is ignored if present as query parameter
         """
-        request = self.factory.get("/origin/", secure=True,
-                data={"foo": "bar", "next": "/next-page/?cat=dog",
-                        "ticket": "FAKE-ticket-456"})
+        request = self.factory.get(
+            "/origin/",
+            secure=True,
+            data={
+                "foo": "bar",
+                "next": "/next-page/?cat=dog",
+                "ticket": "FAKE-ticket-456",
+            },
+        )
         result = get_service_url(request)
-        expected = ("https://testserver/origin/?foo=bar"
-                "&next=%2Fnext-page%2F%3Fcat%3Ddog")
+        expected = (
+            "https://testserver/origin/?foo=bar"
+            "&next=%2Fnext-page%2F%3Fcat%3Ddog"
+        )
         assert_urls_equivalent(result, expected, self.assertEqual)
 
 
@@ -287,9 +342,11 @@ class GetSettingTests(TestCase):
         for setting, default_value in DEFAULT_SETTING_VALUES.items():
             self.assertEqual(get_setting(setting), default_value)
 
-    @override_settings(LOGIN_URL="/new/login/",
-            UNIAUTH_LOGIN_DISPLAY_STANDARD=False,
-            UNIAUTH_MAX_LINKED_EMAILS=-11)
+    @override_settings(
+        LOGIN_URL="/new/login/",
+        UNIAUTH_LOGIN_DISPLAY_STANDARD=False,
+        UNIAUTH_MAX_LINKED_EMAILS=-11,
+    )
     def test_get_setting_provided_settings(self):
         """
         Ensure the provided values for settings are used
@@ -305,12 +362,15 @@ class GetSettingTests(TestCase):
         """
         Ensure it fails for settings that don't exist
         """
+
         def _run_test(setting):
             try:
                 result = get_setting(setting)
-                self.fail("get_setting did not raise an exception when"
-                        "asked for non-existent setting: '%s' returned '%s'"
-                        % (setting, result))
+                self.fail(
+                    "get_setting did not raise an exception when"
+                    "asked for non-existent setting: '%s' returned '%s'"
+                    % (setting, result)
+                )
             except KeyError:
                 pass
 
@@ -384,4 +444,3 @@ class IsTmpUserTests(TestCase):
         with self.settings(UNIAUTH_ALLOW_STANDALONE_ACCOUNTS=False):
             for user in users:
                 self.assertFalse(is_tmp_user(user))
-

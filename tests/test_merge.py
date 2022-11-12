@@ -1,7 +1,8 @@
 from django.contrib.auth.models import User
-from django.test import override_settings, TestCase
-from uniauth.models import Institution, InstitutionAccount, LinkedEmail
+from django.test import TestCase, override_settings
+
 from uniauth.merge import merge_model_instances
+from uniauth.models import Institution, InstitutionAccount, LinkedEmail
 
 
 class MergeModelInstancesTests(TestCase):
@@ -10,31 +11,54 @@ class MergeModelInstancesTests(TestCase):
     """
 
     def setUp(self):
-        self.inst1 = Institution.objects.create(name="Test Uni",
-                slug="test-uni", cas_server_url="https://cas.testuni.edu")
-        self.inst2 = Institution.objects.create(name="Other Inst",
-                slug="other-inst", cas_server_url="https://fed.other-inst.edu")
+        self.inst1 = Institution.objects.create(
+            name="Test Uni",
+            slug="test-uni",
+            cas_server_url="https://cas.testuni.edu",
+        )
+        self.inst2 = Institution.objects.create(
+            name="Other Inst",
+            slug="other-inst",
+            cas_server_url="https://fed.other-inst.edu",
+        )
 
-        self.user1 = User.objects.create(username="user1@example.com",
-                email="user1@example.com")
+        self.user1 = User.objects.create(
+            username="user1@example.com", email="user1@example.com"
+        )
         self.user2 = User.objects.create(username="cas-test-uni-user2")
-        InstitutionAccount.objects.create(profile=self.user2.uniauth_profile,
-                institution=self.inst1, cas_id="user2")
+        InstitutionAccount.objects.create(
+            profile=self.user2.uniauth_profile,
+            institution=self.inst1,
+            cas_id="user2",
+        )
 
-        self.user3 = User.objects.create(username="user3@gmail.com",
-                email="user3@gmail.com")
-        LinkedEmail.objects.create(profile=self.user3.uniauth_profile,
-                address="backup@gmail.com")
-        InstitutionAccount.objects.create(profile=self.user3.uniauth_profile,
-                institution=self.inst1, cas_id="john123")
-        self.user4 = User.objects.create(username="us.er4@nowhere.gov",
-                email="huh@what.edu")
-        LinkedEmail.objects.create(profile=self.user4.uniauth_profile,
-                address="another@gmail.com", is_verified=True)
-        InstitutionAccount.objects.create(profile=self.user4.uniauth_profile,
-                institution=self.inst2, cas_id="exid001")
-        self.user5 = User.objects.create(username="user5@foo.bar",
-                email="user5@foo.bar")
+        self.user3 = User.objects.create(
+            username="user3@gmail.com", email="user3@gmail.com"
+        )
+        LinkedEmail.objects.create(
+            profile=self.user3.uniauth_profile, address="backup@gmail.com"
+        )
+        InstitutionAccount.objects.create(
+            profile=self.user3.uniauth_profile,
+            institution=self.inst1,
+            cas_id="john123",
+        )
+        self.user4 = User.objects.create(
+            username="us.er4@nowhere.gov", email="huh@what.edu"
+        )
+        LinkedEmail.objects.create(
+            profile=self.user4.uniauth_profile,
+            address="another@gmail.com",
+            is_verified=True,
+        )
+        InstitutionAccount.objects.create(
+            profile=self.user4.uniauth_profile,
+            institution=self.inst2,
+            cas_id="exid001",
+        )
+        self.user5 = User.objects.create(
+            username="user5@foo.bar", email="user5@foo.bar"
+        )
 
     def _check_emails(self, actual, expected):
         actual_values = [(x.profile, x.address) for x in actual]
@@ -52,45 +76,55 @@ class MergeModelInstancesTests(TestCase):
         Ensure non-recursive merges work as expected
         """
         merge_model_instances(self.user1, [self.user2])
-        self.assertTrue(User.objects.filter(username="user1@example.com")\
-                .exists())
-        self.assertFalse(User.objects.filter(username="cas-test-uni-user2")\
-                .exists())
+        self.assertTrue(
+            User.objects.filter(username="user1@example.com").exists()
+        )
+        self.assertFalse(
+            User.objects.filter(username="cas-test-uni-user2").exists()
+        )
 
         merged = User.objects.get(username="user1@example.com")
         emails = list(merged.uniauth_profile.linked_emails.order_by("address"))
         accounts = list(merged.uniauth_profile.accounts.order_by("cas_id"))
 
         expected_emails = [
-                LinkedEmail(profile=merged.uniauth_profile,
-                        address="user1@example.com"),
+            LinkedEmail(
+                profile=merged.uniauth_profile, address="user1@example.com"
+            ),
         ]
-        expected_accounts = [
-        ]
+        expected_accounts = []
         self._check_emails(emails, expected_emails)
         self._check_accounts(accounts, expected_accounts)
 
         merge_model_instances(self.user3, [self.user4, self.user5])
-        self.assertTrue(User.objects.filter(username="user3@gmail.com")\
-                .exists())
-        self.assertFalse(User.objects.filter(username="us.er4@nowhere.gov")\
-                .exists())
-        self.assertFalse(User.objects.filter(username="user5@foo.bar")\
-                .exists())
+        self.assertTrue(
+            User.objects.filter(username="user3@gmail.com").exists()
+        )
+        self.assertFalse(
+            User.objects.filter(username="us.er4@nowhere.gov").exists()
+        )
+        self.assertFalse(
+            User.objects.filter(username="user5@foo.bar").exists()
+        )
 
         merged = User.objects.get(username="user3@gmail.com")
         emails = list(merged.uniauth_profile.linked_emails.order_by("address"))
         accounts = list(merged.uniauth_profile.accounts.order_by("cas_id"))
 
         expected_emails = [
-                LinkedEmail(profile=merged.uniauth_profile,
-                        address="backup@gmail.com"),
-                LinkedEmail(profile=merged.uniauth_profile,
-                    address="user3@gmail.com"),
+            LinkedEmail(
+                profile=merged.uniauth_profile, address="backup@gmail.com"
+            ),
+            LinkedEmail(
+                profile=merged.uniauth_profile, address="user3@gmail.com"
+            ),
         ]
         expected_accounts = [
-                InstitutionAccount(profile=merged.uniauth_profile,
-                        institution=self.inst1, cas_id="john123"),
+            InstitutionAccount(
+                profile=merged.uniauth_profile,
+                institution=self.inst1,
+                cas_id="john123",
+            ),
         ]
         self._check_emails(emails, expected_emails)
         self._check_accounts(accounts, expected_accounts)
@@ -101,56 +135,75 @@ class MergeModelInstancesTests(TestCase):
         Ensure recursive merges work as expected
         """
         merge_model_instances(self.user1, [self.user2])
-        self.assertTrue(User.objects.filter(username="user1@example.com")\
-                .exists())
-        self.assertFalse(User.objects.filter(username="cas-test-uni-user2")\
-                .exists())
+        self.assertTrue(
+            User.objects.filter(username="user1@example.com").exists()
+        )
+        self.assertFalse(
+            User.objects.filter(username="cas-test-uni-user2").exists()
+        )
 
         merged = User.objects.get(username="user1@example.com")
         emails = list(merged.uniauth_profile.linked_emails.order_by("address"))
         accounts = list(merged.uniauth_profile.accounts.order_by("cas_id"))
 
         expected_emails = [
-                LinkedEmail(profile=merged.uniauth_profile,
-                        address="user1@example.com"),
+            LinkedEmail(
+                profile=merged.uniauth_profile, address="user1@example.com"
+            ),
         ]
         expected_accounts = [
-                InstitutionAccount(profile=merged.uniauth_profile,
-                        institution=self.inst1, cas_id="user2"),
+            InstitutionAccount(
+                profile=merged.uniauth_profile,
+                institution=self.inst1,
+                cas_id="user2",
+            ),
         ]
         self._check_emails(emails, expected_emails)
         self._check_accounts(accounts, expected_accounts)
 
         merge_model_instances(self.user3, [self.user4, self.user5])
-        self.assertTrue(User.objects.filter(username="user3@gmail.com")\
-                .exists())
-        self.assertFalse(User.objects.filter(username="us.er4@nowhere.gov")\
-                .exists())
-        self.assertFalse(User.objects.filter(username="user5@foo.bar")\
-                .exists())
+        self.assertTrue(
+            User.objects.filter(username="user3@gmail.com").exists()
+        )
+        self.assertFalse(
+            User.objects.filter(username="us.er4@nowhere.gov").exists()
+        )
+        self.assertFalse(
+            User.objects.filter(username="user5@foo.bar").exists()
+        )
 
         merged = User.objects.get(username="user3@gmail.com")
         emails = list(merged.uniauth_profile.linked_emails.order_by("address"))
         accounts = list(merged.uniauth_profile.accounts.order_by("cas_id"))
 
         expected_emails = [
-                LinkedEmail(profile=merged.uniauth_profile,
-                        address="another@gmail.com"),
-                LinkedEmail(profile=merged.uniauth_profile,
-                        address="backup@gmail.com"),
-                LinkedEmail(profile=merged.uniauth_profile,
-                        address="huh@what.edu"),
-                LinkedEmail(profile=merged.uniauth_profile,
-                        address="user3@gmail.com"),
-                LinkedEmail(profile=merged.uniauth_profile,
-                        address="user5@foo.bar"),
+            LinkedEmail(
+                profile=merged.uniauth_profile, address="another@gmail.com"
+            ),
+            LinkedEmail(
+                profile=merged.uniauth_profile, address="backup@gmail.com"
+            ),
+            LinkedEmail(
+                profile=merged.uniauth_profile, address="huh@what.edu"
+            ),
+            LinkedEmail(
+                profile=merged.uniauth_profile, address="user3@gmail.com"
+            ),
+            LinkedEmail(
+                profile=merged.uniauth_profile, address="user5@foo.bar"
+            ),
         ]
         expected_accounts = [
-                InstitutionAccount(profile=merged.uniauth_profile,
-                        institution=self.inst2, cas_id="exid001"),
-                InstitutionAccount(profile=merged.uniauth_profile,
-                        institution=self.inst1, cas_id="john123"),
+            InstitutionAccount(
+                profile=merged.uniauth_profile,
+                institution=self.inst2,
+                cas_id="exid001",
+            ),
+            InstitutionAccount(
+                profile=merged.uniauth_profile,
+                institution=self.inst1,
+                cas_id="john123",
+            ),
         ]
         self._check_emails(emails, expected_emails)
         self._check_accounts(accounts, expected_accounts)
-

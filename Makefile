@@ -9,6 +9,8 @@ clean:
 format:
 	python3.10 -m isort uniauth/
 	python3.10 -m black uniauth/
+	python3.10 -m isort tests/
+	python3.10 -m black tests/
 
 # Perform initial developer setup
 # You will still need to setup tox to work with multiple
