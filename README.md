@@ -1,6 +1,6 @@
 # django-uniauth
 
-[![travis][travis-image]][travis-url]
+[![build][build-image]][build-url]
 [![pyver][pyver-image]][pyver-url]
 [![djangover][djangover-image]][djangover-url]
 [![pypi][pypi-image]][pypi-url]
@@ -273,6 +273,9 @@ The source repository contains a `demo_app` directory which demonstrates how to 
 ## Acknowledgements
 
 Special thank you to [Jérémie Lumbroso](https://github.com/jlumbroso) for his guidance in developing this package.
+
+[build-image]: https://img.shields.io/github/actions/workflow/status/lgoodridge/django-uniauth/run_tests.yml
+[build-url]: https://github.com/lgoodridge/django-uniauth/actions/workflows/run_tests.yml
 
 [djangover-image]: https://img.shields.io/pypi/djversions/django-uniauth.svg?label=django
 [djangover-url]: https://pypi.python.org/pypi/django-uniauth/
