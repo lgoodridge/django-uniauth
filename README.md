@@ -291,6 +291,3 @@ Special thank you to [Jérémie Lumbroso](https://github.com/jlumbroso) for his 
 
 [status-image]: https://img.shields.io/pypi/status/django-uniauth.svg
 [status-url]: https://pypi.python.org/pypi/django-uniauth/
-
-[travis-image]: https://img.shields.io/travis/lgoodridge/django-uniauth.svg?style=flat
-[travis-url]: https://app.travis-ci.com/lgoodridge/django-uniauth
